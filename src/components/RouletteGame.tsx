@@ -10,7 +10,11 @@ interface RouletteGameProps {
   setBalance: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export default function RouletteGame({ mounted, balance, setBalance }: RouletteGameProps) {
+export default function RouletteGame({
+  mounted,
+  balance,
+  setBalance,
+}: RouletteGameProps) {
   const [isDarkFlash, setIsDarkFlash] = useState(false);
   const [showLightning, setShowLightning] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,13 +48,13 @@ export default function RouletteGame({ mounted, balance, setBalance }: RouletteG
       {/* Salama-efekti */}
       {showLightning && <LightningCanvas />}
 
-      {/* 3D-kolikko kiinnitettynä ylös */}
+      {/* 3D-kolikko/patsas kiinnitettynä pelikortin yläreunaan */}
       {mounted && (
         <motion.div
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="absolute -top-10 sm:-top-8 left-0 w-full z-35 pointer-events-none"
+          className="absolute -top-6 sm:-top-4 left-0 w-full z-35 pointer-events-none"
         >
           <CoinCanvas isHidden={isModalOpen} />
         </motion.div>
@@ -58,11 +62,11 @@ export default function RouletteGame({ mounted, balance, setBalance }: RouletteG
 
       {/* Varsinainen rulettipeli */}
       <main className="w-full z-20 px-2 sm:px-4">
-        <GyreRoulette 
+        <GyreRoulette
           balance={balance}
           setBalance={setBalance}
-          onZeroWin={triggerDarkFlash} 
-          onModalToggle={(isOpen) => setIsModalOpen(isOpen)} 
+          onZeroWin={triggerDarkFlash}
+          onModalToggle={(isOpen) => setIsModalOpen(isOpen)}
         />
       </main>
     </div>
