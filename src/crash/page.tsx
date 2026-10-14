@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Sidebar from "../components/SideBar";
 import Chat from "../components/Chat";
 import Header from "../components/Header";
@@ -14,10 +14,6 @@ export default function CrashPage() {
   
   // Yhteinen keskitetty saldo sovelluksen tasolla
   const [balance, setBalance] = useState(2000.00);
-
-  useEffect(() => {
-    // Client-side alustus tarvittaessa
-  }, []);
 
   return (
     <div
@@ -72,7 +68,7 @@ export default function CrashPage() {
         <div className="flex-1 relative flex flex-col items-center justify-start overflow-y-auto pb-28 md:pb-24 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <GoldDust />
 
-          <main className="w-full z-20 px-2 sm:px-4 pt-28 sm:pt-24">
+          <main className="w-full z-20 px-2 sm:px-4 pt-28 sm:pt-24 max-w-6xl mx-auto">
             <CrashGame 
               balance={balance}
               setBalance={setBalance}

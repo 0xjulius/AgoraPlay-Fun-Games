@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { History, Banknote, CheckCircle2, Sparkles } from "lucide-react";
 import crashBg from "../assets/crash-bg.png";
+import LiveBetsHistory from "./LiveBetsHistory";
+import type { LiveBetItem } from "./LiveBetsHistory";
 
 interface CrashGameProps {
   balance: number;
@@ -19,21 +21,27 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
   const [autoCashOut, setAutoCashOut] = useState<string>("");
   const [hasBet, setHasBet] = useState<boolean>(false);
   const [cashedOut, setCashedOut] = useState<boolean>(false);
-  
+
   const [cashOutMultiplier, setCashOutMultiplier] = useState<number>(0);
   const [cashOutWinAmount, setCashOutWinAmount] = useState<number>(0);
-  
-  const [currentMultiplier, setCurrentMultiplier] = useState<number>(1.00);
-  const [crashPoint, setCrashPoint] = useState<number>(1.00);
-  const [status, setStatus] = useState<"waiting" | "flying" | "crashed">("waiting");
+
+  const [currentMultiplier, setCurrentMultiplier] = useState<number>(1.0);
+  const [crashPoint, setCrashPoint] = useState<number>(1.0);
+  const [status, setStatus] = useState<"waiting" | "flying" | "crashed">(
+    "waiting",
+  );
   const [countdown, setCountdown] = useState<number>(3.0);
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
+
+  // Live-vedot ja aktiivinen välilehti
+  const [liveBets, setLiveBets] = useState<LiveBetItem[]>([]);
+  const [activeTab, setActiveTab] = useState<"all" | "my">("all");
 
   const hasBetRef = useRef(hasBet);
   const cashedOutRef = useRef(cashedOut);
   const autoCashOutRef = useRef(autoCashOut);
-  // Lennon käyrän pisteet (aika sekunteina + kerroin), käytetään chartin piirtoon
   const pointsRef = useRef<{ t: number; m: number }[]>([]);
+  const botTargetsRef = useRef<{ id: string; target: number }[]>([]);
 
   useEffect(() => {
     hasBetRef.current = hasBet;
@@ -45,9 +53,9 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
     { id: "1", multiplier: 2.45, crashed: true },
     { id: "2", multiplier: 8.97, crashed: true },
     { id: "3", multiplier: 1.84, crashed: true },
-    { id: "4", multiplier: 3.40, crashed: true },
+    { id: "4", multiplier: 3.4, crashed: true },
     { id: "5", multiplier: 1.49, crashed: true },
-    { id: "6", multiplier: 5.10, crashed: true },
+    { id: "6", multiplier: 5.1, crashed: true },
   ]);
 
   const playBetSound = () => {
@@ -56,55 +64,113 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
   };
 
   const generateBalancedCrashPoint = (): number => {
-    const TEST_MODE_TARGET = 0; // Aseta tähän esim 50.00 jos haluat testata suuria kertoimia
+    const TEST_MODE_TARGET = 0;
     if (TEST_MODE_TARGET) {
       return TEST_MODE_TARGET;
     }
-        
+
     const array = new Uint32Array(1);
     window.crypto.getRandomValues(array);
     const randomValue = array[0] / 4294967296;
 
-    const houseEdge = 0.02; 
+    const houseEdge = 0.02;
     if (randomValue < 0.01) {
-      return 1.00;
+      return 1.0;
     }
 
     const calculated = 1.05 + (1 / (1 - randomValue * (1 - houseEdge))) * 0.8;
-    const point = Math.max(1.10, Number(calculated.toFixed(2)));
-    return Math.min(point, 200.00);
+    const point = Math.max(1.1, Number(calculated.toFixed(2)));
+    return Math.min(point, 200.0);
   };
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     let interval: ReturnType<typeof setInterval>;
+    const botTimeouts: ReturnType<typeof setTimeout>[] = [];
 
     if (status === "waiting") {
       const secureCrash = generateBalancedCrashPoint();
       setCrashPoint(secureCrash);
       pointsRef.current = [];
       setElapsedSeconds(0);
+      setLiveBets([]); // Tyhjennetään lista kierroksen alussa
 
       setCountdown(3.0);
       const startTime = Date.now();
-      
+
       interval = setInterval(() => {
         const elapsed = (Date.now() - startTime) / 1000;
         const remaining = Math.max(0, 3.0 - elapsed);
         setCountdown(Number(remaining.toFixed(1)));
       }, 100);
 
+      // Jos pelaaja on jo asettanut panoksen ennen kierroksen alkua, lisätään se HETI ensimmäisenä listalle
+      if (hasBetRef.current) {
+        setLiveBets([
+          {
+            id: `user-bet-${Date.now()}`,
+            username: "You",
+            amount: parseFloat(betAmount),
+            multiplier: null,
+            payout: null,
+            status: "playing",
+            isUser: true,
+          },
+        ]);
+      }
+
+      // --- LUODAAN BOTIT PORRASTETUSTI ODOTUSTILAN AIKANA ---
+      const botNames = [
+        "ZeusMaster", "Athena99", "Ares_God", "Hermes_Fast", "Poseidon7",
+        "Hera_Queen", "Apollo_Sun", "Artemis_Hunt", "Chronos", "OlympusKing",
+        "Midas_Touch", "Spartan300", "Minotaur", "Pegasus", "Hades_Under",
+      ];
+      const count = Math.floor(Math.random() * 4) + 5;
+      const shuffled = [...botNames].sort(() => 0.5 - Math.random());
+      const allTargets: { id: string; target: number }[] = [];
+      const generatedBots: LiveBetItem[] = [];
+
+      for (let i = 0; i < count; i++) {
+        const id = `bot-${i}-${Date.now()}`;
+        const target = Number((1.1 + Math.pow(Math.random(), 2) * 12).toFixed(2));
+        allTargets.push({ id, target });
+        generatedBots.push({
+          id,
+          username: shuffled[i],
+          amount: Math.floor(Math.random() * 95) + 5,
+          multiplier: null,
+          payout: null,
+          status: "playing",
+          isUser: false,
+        });
+      }
+      botTargetsRef.current = allTargets;
+
+      // Porrastetaan bottien lisäys niin, että oma veto pysyy aina listan kärjessä
+      generatedBots.forEach((bot, idx) => {
+        const delay = 300 + Math.floor((idx / generatedBots.length) * 1800) + Math.random() * 200;
+        const t = setTimeout(() => {
+          setLiveBets((prev) => {
+            // Varmistetaan, että oma veto pysyy aina indeksissä 0, jos se on olemassa
+            const userBet = prev.find((b) => b.isUser);
+            const otherBets = prev.filter((b) => !b.isUser);
+            const updatedOthers = [...otherBets, bot];
+            return userBet ? [userBet, ...updatedOthers] : updatedOthers;
+          });
+        }, delay);
+        botTimeouts.push(t);
+      });
+
       timer = setTimeout(() => {
         clearInterval(interval);
-        setCurrentMultiplier(1.00);
+        setCurrentMultiplier(1.0);
         setStatus("flying");
       }, 3000);
-
     } else if (status === "flying") {
       let virtualElapsed = 0;
       let realElapsed = 0;
       let lastTime = Date.now();
-      let currentMultVal = 1.00;
+      let currentMultVal = 1.0;
       pointsRef.current = [{ t: 0, m: 1 }];
 
       interval = setInterval(() => {
@@ -117,22 +183,58 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
 
         let speedFactor = 1.0;
         if (currentMultVal >= 30) {
-          speedFactor = 2.2; 
+          speedFactor = 2.2;
         } else if (currentMultVal >= 20) {
-          speedFactor = 1.7; 
+          speedFactor = 1.7;
         } else if (currentMultVal >= 10) {
-          speedFactor = 1.35; 
+          speedFactor = 1.35;
         }
 
         virtualElapsed += delta * speedFactor;
 
-        const newMult = Number((1.00 + 0.15 * virtualElapsed + 0.035 * Math.pow(virtualElapsed, 2.1)).toFixed(2));
+        const newMult = Number(
+          (
+            1.0 +
+            0.15 * virtualElapsed +
+            0.035 * Math.pow(virtualElapsed, 2.1)
+          ).toFixed(2),
+        );
         currentMultVal = newMult;
+
+        setLiveBets((prev) => {
+          let hasChanges = false;
+          const updated = prev.map((bet): LiveBetItem => {
+            if (bet.status !== "playing") return bet;
+            if (bet.isUser) return bet;
+
+            const botTarget = botTargetsRef.current.find(
+              (b) => b.id === bet.id,
+            );
+            const target = botTarget ? botTarget.target : 2.0;
+
+            if (newMult >= target) {
+              hasChanges = true;
+              return {
+                ...bet,
+                multiplier: target,
+                payout: Number((bet.amount * target).toFixed(2)),
+                status: "won" as const,
+              };
+            }
+            return bet;
+          });
+
+          return hasChanges ? updated : prev;
+        });
 
         const pts = pointsRef.current;
         const lastPt = pts[pts.length - 1];
         const reached = Math.min(newMult, crashPoint);
-        if (!lastPt || realElapsed - lastPt.t >= 0.05 || newMult >= crashPoint) {
+        if (
+          !lastPt ||
+          realElapsed - lastPt.t >= 0.05 ||
+          newMult >= crashPoint
+        ) {
           pts.push({ t: realElapsed, m: reached });
         }
 
@@ -152,9 +254,22 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
           clearInterval(interval);
 
           setHistory((prev) => [
-            { id: Date.now().toString(), multiplier: crashPoint, crashed: true },
+            {
+              id: Date.now().toString(),
+              multiplier: crashPoint,
+              crashed: true,
+            },
             ...prev.slice(0, 11),
           ]);
+
+          setLiveBets((prev) =>
+            prev.map((bet): LiveBetItem => {
+              if (bet.status === "playing") {
+                return { ...bet, status: "lost" as const };
+              }
+              return bet;
+            }),
+          );
 
           setTimeout(() => {
             setHasBet(false);
@@ -174,21 +289,44 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
     return () => {
       clearTimeout(timer);
       clearInterval(interval);
+      botTimeouts.forEach((t) => clearTimeout(t));
     };
-  }, [status, crashPoint]);
+  }, [status]);
 
   const handlePlaceBet = () => {
     const amount = parseFloat(betAmount);
-    if (isNaN(amount) || amount <= 0 || amount > balance || status !== "waiting") return;
+    if (
+      isNaN(amount) ||
+      amount <= 0 ||
+      amount > balance ||
+      status !== "waiting"
+    )
+      return;
 
     playBetSound();
     setBalance((prev) => prev - amount);
     setHasBet(true);
     setCashedOut(false);
+
+    // Lisätään tai siirretään oma veto heti listan kärkeen (ensimmäiseksi)
+    setLiveBets((prev) => {
+      const userBet: LiveBetItem = {
+        id: `user-bet-${Date.now()}`,
+        username: "You",
+        amount: amount,
+        multiplier: null,
+        payout: null,
+        status: "playing",
+        isUser: true,
+      };
+      const otherBets = prev.filter((b) => !b.isUser);
+      return [userBet, ...otherBets];
+    });
   };
 
   const handleCashOut = (mult: number) => {
-    if (!hasBetRef.current || cashedOutRef.current || status !== "flying") return;
+    if (!hasBetRef.current || cashedOutRef.current || status !== "flying")
+      return;
     const amount = parseFloat(betAmount);
     const winAmount = amount * mult;
 
@@ -196,6 +334,20 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
     setCashOutMultiplier(mult);
     setCashOutWinAmount(winAmount);
     setCashedOut(true);
+
+    setLiveBets((prev) =>
+      prev.map((bet): LiveBetItem => {
+        if (bet.isUser && bet.status === "playing") {
+          return {
+            ...bet,
+            multiplier: mult,
+            payout: winAmount,
+            status: "won" as const,
+          };
+        }
+        return bet;
+      }),
+    );
   };
 
   const clearBet = () => {
@@ -221,30 +373,24 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
   };
 
   const getBadgeStyle = (mult: number) => {
-    if (mult >= 2.00) {
+    if (mult >= 2.0) {
       return "bg-emerald-600 text-white font-extrabold shadow-md border border-emerald-400/60";
-    } else if (mult >= 1.50) {
+    } else if (mult >= 1.5) {
       return "bg-[#6E655F] text-white font-extrabold shadow-md border border-[#8C827A]/60";
     } else {
       return "bg-rose-700 text-white font-extrabold shadow-md border border-rose-500/60";
     }
   };
 
-  // ---- CHARTIN SKAALAUS ----
-  // Alussa näkyy 1x, 2x ja 3x (näkyvä yläraja 3). Skaalaus alkaa kun kerroin ylittää 2x:
-  // tämän jälkeen yläraja kasvaa kertoimen mukana (1.5 × nykyinen kerroin), jolloin
-  // uudet merkinnät (4x, 6x, 10x...) liukuvat ylhäältä alas ja pallo pysyy näkyvissä.
   const isRunning = status === "flying" || status === "crashed";
   const displayMult = isRunning ? currentMultiplier : 1;
   const viewMax = Math.max(3, displayMult * 1.5);
 
-  // Numeroiden määrä kasvaa kierroksen edetessä: alussa 2 (2x, 3x), sitten
-  // enemmän kertoimen kasvaessa (noin 4 kohdassa 2x, 7 kohdassa 10x, max 9)
-  const maxMarks = displayMult < 2
-    ? 2
-    : Math.min(9, 3 + Math.floor(Math.log10(displayMult) * 4));
+  const maxMarks =
+    displayMult < 2
+      ? 2
+      : Math.min(9, 3 + Math.floor(Math.log10(displayMult) * 4));
 
-  // Valitaan pienin askelväli, jolla numeroita mahtuu enintään maxMarks
   const pickStep = (max: number) => {
     const steps = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500];
     for (const st of steps) {
@@ -259,17 +405,18 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
     if (v > 1) scaleMarks.push(v);
   }
 
-  // Kertoimen -> pystysuuntainen sijainti (0 = alhaalla/1x, 1 = ylhäällä)
   const yFrac = (m: number) =>
     Math.min(1, Math.max(0, (m - 1) / (viewMax - 1)));
 
-  // Aika -> vaakasuuntainen sijainti. Pallo pysähtyy 80 % kohtaan ja käyrä puristuu kasaan.
   const xMaxSeconds = Math.max(8, elapsedSeconds * 1.25);
   const xFrac = (t: number) => Math.min(1, t / xMaxSeconds);
 
   const points = pointsRef.current;
   const pathD = points
-    .map((pt, i) => `${i === 0 ? "M" : "L"} ${(xFrac(pt.t) * 100).toFixed(2)} ${((1 - yFrac(pt.m)) * 100).toFixed(2)}`)
+    .map(
+      (pt, i) =>
+        `${i === 0 ? "M" : "L"} ${(xFrac(pt.t) * 100).toFixed(2)} ${((1 - yFrac(pt.m)) * 100).toFixed(2)}`,
+    )
     .join(" ");
 
   const ballX = xFrac(elapsedSeconds) * 100;
@@ -277,7 +424,6 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
 
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col gap-4 select-none pb-12">
-      
       {/* 1. MULTIPLIER HISTORY */}
       <div className="flex items-center gap-2 overflow-x-auto py-2 px-3 bg-[#FAF6F0]/90 backdrop-blur-md rounded-2xl border border-[#E2D6C3] shadow-md [&::-webkit-scrollbar]:hidden">
         <div className="p-1.5 rounded-xl bg-[#D4AF37]/15 text-amber-800 shrink-0">
@@ -298,11 +444,9 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
 
       {/* 2. MAIN LAYOUT */}
       <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4">
-        
         {/* RIGHT PANEL (CHART & FLIGHT) */}
-        <div className="order-1 lg:order-2 lg:col-span-8 bg-[#1A1614] rounded-3xl border border-[#D4AF37]/40 p-6 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center min-h-[440px]">
-          
-          <div 
+        <div className="order-1 lg:order-2 lg:col-span-8 bg-[#1A1614] rounded-3xl border border-[#D4AF37]/40 p-6 shadow-2xl shadow-[inset_0_0_30px_rgba(255,255,255,0.35)] relative overflow-hidden flex flex-col items-center justify-center min-h-[440px]">
+          <div
             className="absolute inset-0 bg-cover bg-center pointer-events-none"
             style={{ backgroundImage: `url(${crashBg})` }}
           />
@@ -315,9 +459,8 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(26,22,20,0.35)_0%,_transparent_75%)] pointer-events-none" />
           )}
 
-          {/* PLOT-ALUE: lentorata, pallo ja apuviivat (samat rajat kuin oikean reunan asteikolla) */}
+          {/* PLOT-ALUE */}
           <div className="absolute left-16 right-24 top-16 bottom-16 pointer-events-none z-10">
-            {/* Vaakaviivat asteikon kohdille */}
             {scaleMarks.map((mark) => (
               <div
                 key={`grid-${mark}`}
@@ -326,20 +469,25 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
               />
             ))}
 
-            {(status === "flying" || status === "crashed") && points.length > 1 && (
-              <svg className="absolute inset-0 w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 100">
-                <path
-                  d={pathD}
-                  fill="none"
-                  stroke={status === "crashed" ? "#F43F5E" : "#F59E0B"}
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  vectorEffect="non-scaling-stroke"
-                  className="filter drop-shadow-[0_0_6px_rgba(245,158,11,0.8)] opacity-90"
-                />
-              </svg>
-            )}
+            {(status === "flying" || status === "crashed") &&
+              points.length > 1 && (
+                <svg
+                  className="absolute inset-0 w-full h-full overflow-visible"
+                  preserveAspectRatio="none"
+                  viewBox="0 0 100 100"
+                >
+                  <path
+                    d={pathD}
+                    fill="none"
+                    stroke={status === "crashed" ? "#F43F5E" : "#F59E0B"}
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    vectorEffect="non-scaling-stroke"
+                    className="filter drop-shadow-[0_0_6px_rgba(245,158,11,0.8)] opacity-90"
+                  />
+                </svg>
+              )}
 
             {status === "flying" && (
               <div
@@ -358,11 +506,13 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
             )}
           </div>
 
-          {/* KESKIMERKKI ILMAN LAATIKKOA */}
+          {/* KESKIMERKKI */}
           <div className="z-25 flex flex-col items-center justify-center">
             {status === "waiting" && (
               <div className="flex flex-col items-center gap-2 animate-pulse drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]">
-                <span className="text-amber-300 font-serif text-sm tracking-widest uppercase font-bold drop-shadow">Next Ascent Begins Soon</span>
+                <span className="text-amber-300 font-serif text-sm tracking-widest uppercase font-bold drop-shadow">
+                  Next Ascent Begins Soon
+                </span>
                 <span className="text-[#FAF6F0] font-serif text-5xl sm:text-6xl font-extrabold text-amber-200 drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
                   {countdown.toFixed(1)}s
                 </span>
@@ -376,7 +526,8 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
                 </span>
                 {hasBet && !cashedOut && (
                   <span className="mt-2 text-emerald-300 font-serif text-base font-bold tracking-wide animate-pulse drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-                    Potential Win: $ {(Number(betAmount) * currentMultiplier).toFixed(2)}
+                    Potential Win: ${" "}
+                    {(Number(betAmount) * currentMultiplier).toFixed(2)}
                   </span>
                 )}
                 {cashedOut && (
@@ -389,7 +540,9 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
 
             {status === "crashed" && (
               <div className="flex flex-col items-center gap-2 drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]">
-                <span className="text-rose-400 font-serif text-sm tracking-widest uppercase font-extrabold drop-shadow">Ascent Crashed!</span>
+                <span className="text-rose-400 font-serif text-sm tracking-widest uppercase font-extrabold drop-shadow">
+                  Ascent Crashed!
+                </span>
                 <span className="text-rose-300 font-serif text-5xl sm:text-6xl font-extrabold drop-shadow-[0_0_25px_rgba(244,63,94,0.9)]">
                   {currentMultiplier.toFixed(2)}x
                 </span>
@@ -397,14 +550,16 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
             )}
           </div>
 
-          {/* Oikean reunan asteikko: sijainti lasketaan arvosta, joten pallo on aina oikean kertoimen kohdalla.
-              Uudet arvot (esim. 4x) ilmestyvät yläreunaan ja liukuvat alas kertoimen kasvaessa. */}
+          {/* Oikean reunan asteikko */}
           <div className="absolute right-6 top-16 bottom-16 w-16 pointer-events-none z-10 font-mono text-xs font-bold text-[#FAF6F0] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
             {scaleMarks.map((mark) => (
               <div
                 key={mark}
                 className="absolute left-0 right-0 text-right pr-2 animate-in fade-in duration-500"
-                style={{ top: `${(1 - yFrac(mark)) * 100}%`, transform: "translateY(-50%)" }}
+                style={{
+                  top: `${(1 - yFrac(mark)) * 100}%`,
+                  transform: "translateY(-50%)",
+                }}
               >
                 x{mark}
               </div>
@@ -417,12 +572,10 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
             <span>{(xMaxSeconds * 0.5).toFixed(1)}s</span>
             <span>{xMaxSeconds.toFixed(1)}s</span>
           </div>
-
         </div>
 
         {/* LEFT PANEL (CONTROLS) */}
         <div className="order-2 lg:order-1 lg:col-span-4 bg-[#FAF6F0]/95 backdrop-blur-md rounded-3xl border border-[#E2D6C3] p-5 shadow-xl flex flex-col justify-between gap-6">
-          
           <div className="flex flex-col gap-4">
             {/* Manual / Autobet tabs */}
             <div className="flex p-1 bg-[#F4EBE1] rounded-2xl border border-[#E2D6C3]">
@@ -503,7 +656,9 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
                     key={btn.label}
                     disabled={hasBet}
                     className={`gyre-btn py-1.5 px-0.5 rounded-lg text-[10px] sm:text-xs font-bold border transition-all active:scale-95 shadow-xs text-center cursor-pointer disabled:opacity-50 truncate ${
-                      btn.label === "MAX" ? "bg-gradient-to-r from-[#D4AF37]/30 to-[#D4AF37]/50 border-[#D4AF37]/70 font-extrabold text-amber-950" : ""
+                      btn.label === "MAX"
+                        ? "bg-gradient-to-r from-[#D4AF37]/30 to-[#D4AF37]/50 border-[#D4AF37]/70 font-extrabold text-amber-950"
+                        : ""
                     }`}
                     onClick={btn.action}
                   >
@@ -515,7 +670,9 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
 
             {/* Auto Cash Out */}
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs text-[#8C827A] font-medium px-1">Auto cash out</span>
+              <span className="text-xs text-[#8C827A] font-medium px-1">
+                Auto cash out
+              </span>
               <div className="relative flex items-center">
                 <input
                   type="number"
@@ -537,7 +694,9 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
                 disabled={status !== "waiting"}
                 className="w-full py-3.5 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-serif font-bold text-base rounded-2xl shadow-lg border border-amber-400/50 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {status === "waiting" ? `Place Bet (${countdown.toFixed(1)}s)` : "Waiting for round..."}
+                {status === "waiting"
+                  ? `Place Bet (${countdown.toFixed(1)}s)`
+                  : "Waiting for round..."}
               </button>
             ) : status === "waiting" && hasBet ? (
               <button
@@ -560,7 +719,9 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
                 onClick={() => handleCashOut(currentMultiplier)}
                 className="w-full py-4 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 hover:from-emerald-500 text-white font-serif font-bold text-base rounded-2xl shadow-xl border border-emerald-400/50 cursor-pointer transition-all active:scale-[0.98] flex flex-col items-center justify-center"
               >
-                <span className="tracking-wider uppercase text-xs font-extrabold">CASH OUT</span>
+                <span className="tracking-wider uppercase text-xs font-extrabold">
+                  CASH OUT
+                </span>
                 <span className="text-xl sm:text-2xl font-extrabold flex items-center gap-2">
                   <Banknote className="w-5 h-5" />
                   {(Number(betAmount) * currentMultiplier).toFixed(2)} USD
@@ -571,7 +732,9 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
                 disabled
                 className="w-full py-4 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 border-2 border-[#D4AF37] text-amber-950 font-serif rounded-2xl shadow-[0_0_25px_rgba(212,175,55,0.4)] cursor-not-allowed flex items-center justify-center gap-3 relative overflow-hidden"
               >
-                <span className="text-white text-xl select-none drop-shadow">🌿</span>
+                <span className="text-white text-xl select-none drop-shadow">
+                  🌿
+                </span>
                 <div className="flex flex-col items-center justify-center">
                   <div className="flex items-center gap-1.5 text-xs uppercase tracking-widest font-extrabold text-amber-950 drop-shadow-xs">
                     <Sparkles className="w-3.5 h-3.5 text-amber-100" />
@@ -581,7 +744,9 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
                     +{cashOutWinAmount.toFixed(2)} USD
                   </span>
                 </div>
-                <span className="text-white text-xl select-none scale-x-[-1] drop-shadow">🌿</span>
+                <span className="text-white text-xl select-none scale-x-[-1] drop-shadow">
+                  🌿
+                </span>
               </button>
             ) : (
               <button
@@ -597,11 +762,15 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
               </button>
             )}
           </div>
-
         </div>
-
       </div>
 
+      {/* 3. LIVE BETS -KOMPONENTTI PELIN ALAPUOLELLA */}
+      <LiveBetsHistory
+        bets={liveBets}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
     </div>
   );
 }
