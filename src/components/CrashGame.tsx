@@ -93,7 +93,7 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
       setCrashPoint(secureCrash);
       pointsRef.current = [];
       setElapsedSeconds(0);
-      setLiveBets([]); // Tyhjennetään lista kierroksen alussa
+      setLiveBets([]);
 
       setCountdown(3.0);
       const startTime = Date.now();
@@ -104,7 +104,6 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
         setCountdown(Number(remaining.toFixed(1)));
       }, 100);
 
-      // Jos pelaaja on jo asettanut panoksen ennen kierroksen alkua, lisätään se HETI ensimmäisenä listalle
       if (hasBetRef.current) {
         setLiveBets([
           {
@@ -119,7 +118,6 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
         ]);
       }
 
-      // --- LUODAAN BOTIT PORRASTETUSTI ODOTUSTILAN AIKANA ---
       const botNames = [
         "ZeusMaster", "Athena99", "Ares_God", "Hermes_Fast", "Poseidon7",
         "Hera_Queen", "Apollo_Sun", "Artemis_Hunt", "Chronos", "OlympusKing",
@@ -146,12 +144,10 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
       }
       botTargetsRef.current = allTargets;
 
-      // Porrastetaan bottien lisäys niin, että oma veto pysyy aina listan kärjessä
       generatedBots.forEach((bot, idx) => {
         const delay = 300 + Math.floor((idx / generatedBots.length) * 1800) + Math.random() * 200;
         const t = setTimeout(() => {
           setLiveBets((prev) => {
-            // Varmistetaan, että oma veto pysyy aina indeksissä 0, jos se on olemassa
             const userBet = prev.find((b) => b.isUser);
             const otherBets = prev.filter((b) => !b.isUser);
             const updatedOthers = [...otherBets, bot];
@@ -308,7 +304,6 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
     setHasBet(true);
     setCashedOut(false);
 
-    // Lisätään tai siirretään oma veto heti listan kärkeen (ensimmäiseksi)
     setLiveBets((prev) => {
       const userBet: LiveBetItem = {
         id: `user-bet-${Date.now()}`,
@@ -421,6 +416,91 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
 
   const ballX = xFrac(elapsedSeconds) * 100;
   const ballY = (1 - yFrac(currentMultiplier)) * 100;
+
+  // Toimintopainike
+  const renderActionButton = () => {
+    if (!hasBet) {
+      return (
+        <button
+          onClick={handlePlaceBet}
+          disabled={status !== "waiting"}
+          className="w-full py-3.5 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-serif font-bold text-base rounded-2xl shadow-lg border border-amber-400/50 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {status === "waiting"
+            ? `Place Bet (${countdown.toFixed(1)}s)`
+            : "Waiting for round..."}
+        </button>
+      );
+    }
+    if (status === "waiting" && hasBet) {
+      return (
+        <button
+          disabled
+          className="w-full py-4 bg-gradient-to-r from-[#D4AF37]/20 via-[#F3E5AB]/40 to-[#D4AF37]/20 border border-[#D4AF37]/60 text-amber-950 font-serif rounded-2xl shadow-inner cursor-default flex flex-col items-center justify-center gap-1"
+        >
+          <div className="flex items-center gap-1.5 text-xs tracking-wider uppercase font-bold text-amber-800">
+            <CheckCircle2 className="w-4 h-4 text-amber-700" />
+            <span>Bet Placed</span>
+          </div>
+          <span className="text-xl sm:text-2xl font-extrabold text-amber-950 tracking-tight">
+            {Number(betAmount).toFixed(2)} USD
+          </span>
+          <span className="text-xs font-semibold text-amber-900">
+            Starts in {countdown.toFixed(1)}s
+          </span>
+        </button>
+      );
+    }
+   if (!cashedOut && status === "flying") {
+      return (
+        <button
+          onClick={() => handleCashOut(currentMultiplier)}
+          className="w-full py-4 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 hover:from-emerald-500 text-white font-serif font-bold text-base rounded-2xl shadow-xl border border-emerald-400/50 cursor-pointer transition-all active:scale-[0.98] flex flex-col items-center justify-center"
+        >
+          <span className="tracking-wider uppercase text-xs font-extrabold">
+            CASH OUT
+          </span>
+          <span className="text-xl sm:text-2xl font-extrabold flex items-center gap-2">
+            <Banknote className="w-5 h-5" />
+            {(Number(betAmount) * currentMultiplier).toFixed(2)} USD
+          </span>
+        </button>
+      );
+    }
+    if (cashedOut) {
+      return (
+        <button
+          disabled
+          className="w-full py-4 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 border-2 border-[#D4AF37] text-amber-950 font-serif rounded-2xl shadow-[0_0_25px_rgba(212,175,55,0.4)] cursor-not-allowed flex items-center justify-center gap-3 relative overflow-hidden"
+        >
+          <span className="text-white text-xl select-none drop-shadow">🌿</span>
+          <div className="flex flex-col items-center justify-center">
+            <div className="flex items-center gap-1.5 text-xs uppercase tracking-widest font-extrabold text-amber-950 drop-shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 text-amber-100" />
+              <span>Cashed Out x{cashOutMultiplier.toFixed(2)}</span>
+            </div>
+            <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+              +{cashOutWinAmount.toFixed(2)} USD
+            </span>
+          </div>
+          <span className="text-white text-xl select-none scale-x-[-1] drop-shadow">🌿</span>
+        </button>
+      );
+    }
+    return (
+      <button
+        disabled
+        className="w-full py-4 bg-rose-900/20 border border-rose-600/40 text-rose-900 font-serif font-bold rounded-2xl cursor-not-allowed flex flex-col items-center justify-center gap-0.5"
+      >
+        <span className="text-xs uppercase tracking-wider font-bold text-rose-700">
+          Round Ended
+        </span>
+        <span className="text-xl sm:text-2xl font-extrabold text-rose-800 tracking-tight">
+          -{Number(betAmount).toFixed(2)} USD
+        </span>
+      </button>
+    );
+  };
 
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col gap-4 select-none pb-12">
@@ -574,6 +654,11 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
           </div>
         </div>
 
+        {/* MOBIILIN ERILLINEN TOIMINTOPAINIKE HETI PELIN ALAPUOLELLA (KAIKISSA TILANTEISSA) */}
+        <div className="block lg:hidden order-1 w-full">
+          {renderActionButton()}
+        </div>
+
         {/* LEFT PANEL (CONTROLS) */}
         <div className="order-2 lg:order-1 lg:col-span-4 bg-[#FAF6F0]/95 backdrop-blur-md rounded-3xl border border-[#E2D6C3] p-5 shadow-xl flex flex-col justify-between gap-6">
           <div className="flex flex-col gap-4">
@@ -686,81 +771,9 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div>
-            {!hasBet ? (
-              <button
-                onClick={handlePlaceBet}
-                disabled={status !== "waiting"}
-                className="w-full py-3.5 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-serif font-bold text-base rounded-2xl shadow-lg border border-amber-400/50 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {status === "waiting"
-                  ? `Place Bet (${countdown.toFixed(1)}s)`
-                  : "Waiting for round..."}
-              </button>
-            ) : status === "waiting" && hasBet ? (
-              <button
-                disabled
-                className="w-full py-4 bg-gradient-to-r from-[#D4AF37]/20 via-[#F3E5AB]/40 to-[#D4AF37]/20 border border-[#D4AF37]/60 text-amber-950 font-serif rounded-2xl shadow-inner cursor-default flex flex-col items-center justify-center gap-1"
-              >
-                <div className="flex items-center gap-1.5 text-xs tracking-wider uppercase font-bold text-amber-800">
-                  <CheckCircle2 className="w-4 h-4 text-amber-700" />
-                  <span>Bet Placed</span>
-                </div>
-                <span className="text-xl sm:text-2xl font-extrabold text-amber-950 tracking-tight">
-                  {Number(betAmount).toFixed(2)} USD
-                </span>
-                <span className="text-xs font-semibold text-amber-900">
-                  Starts in {countdown.toFixed(1)}s
-                </span>
-              </button>
-            ) : !cashedOut && status === "flying" ? (
-              <button
-                onClick={() => handleCashOut(currentMultiplier)}
-                className="w-full py-4 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 hover:from-emerald-500 text-white font-serif font-bold text-base rounded-2xl shadow-xl border border-emerald-400/50 cursor-pointer transition-all active:scale-[0.98] flex flex-col items-center justify-center"
-              >
-                <span className="tracking-wider uppercase text-xs font-extrabold">
-                  CASH OUT
-                </span>
-                <span className="text-xl sm:text-2xl font-extrabold flex items-center gap-2">
-                  <Banknote className="w-5 h-5" />
-                  {(Number(betAmount) * currentMultiplier).toFixed(2)} USD
-                </span>
-              </button>
-            ) : cashedOut ? (
-              <button
-                disabled
-                className="w-full py-4 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 border-2 border-[#D4AF37] text-amber-950 font-serif rounded-2xl shadow-[0_0_25px_rgba(212,175,55,0.4)] cursor-not-allowed flex items-center justify-center gap-3 relative overflow-hidden"
-              >
-                <span className="text-white text-xl select-none drop-shadow">
-                  🌿
-                </span>
-                <div className="flex flex-col items-center justify-center">
-                  <div className="flex items-center gap-1.5 text-xs uppercase tracking-widest font-extrabold text-amber-950 drop-shadow-xs">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-100" />
-                    <span>Cashed Out x{cashOutMultiplier.toFixed(2)}</span>
-                  </div>
-                  <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
-                    +{cashOutWinAmount.toFixed(2)} USD
-                  </span>
-                </div>
-                <span className="text-white text-xl select-none scale-x-[-1] drop-shadow">
-                  🌿
-                </span>
-              </button>
-            ) : (
-              <button
-                disabled
-                className="w-full py-4 bg-rose-900/20 border border-rose-600/40 text-rose-900 font-serif font-bold rounded-2xl cursor-not-allowed flex flex-col items-center justify-center gap-0.5"
-              >
-                <span className="text-xs uppercase tracking-wider font-bold text-rose-700">
-                  Round Ended
-                </span>
-                <span className="text-xl sm:text-2xl font-extrabold text-rose-800 tracking-tight">
-                  -{Number(betAmount).toFixed(2)} USD
-                </span>
-              </button>
-            )}
+          {/* DESKTOP-NÄKYMÄN TOIMINTOPAINIKE */}
+          <div className="hidden lg:block">
+            {renderActionButton()}
           </div>
         </div>
       </div>
