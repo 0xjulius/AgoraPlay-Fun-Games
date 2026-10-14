@@ -30,6 +30,8 @@ interface OutcomeState {
 }
 
 interface GyreRouletteProps {
+  balance: number;
+  setBalance: React.Dispatch<React.SetStateAction<number>>;
   onZeroWin?: () => void;
   onModalToggle?: (isOpen: boolean) => void;
 }
@@ -150,10 +152,11 @@ function fmt(n: number): string {
 }
 
 export default function GyreRoulette({
+  balance,
+  setBalance,
   onZeroWin,
   onModalToggle,
 }: GyreRouletteProps) {
-  const [balance, setBalance] = useState<number>(2000.0);
   const [isRulesOpen, setIsRulesOpen] = useState<boolean>(false);
   const [isWalletOpen, setIsWalletOpen] = useState<boolean>(false);
 

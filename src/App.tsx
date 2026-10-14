@@ -1,85 +1,85 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import GyreRoulette from "./components/GyreRoulette";
-import CoinCanvas from "./components/CoinCanvas";
+import Sidebar from "./components/SideBar";
+import Chat from "./components/Chat";
+import Header from "./components/Header";
+import RouletteGame from "./components/RouletteGame";
 import GoldDust from "./components/GoldDust";
-import LightningCanvas from "./components/LightningCanvas";
 import bgImage from "./assets/bg2.png";
 
-function App() {
+export default function App() {
   const [mounted, setMounted] = useState(false);
-  const [isDarkFlash, setIsDarkFlash] = useState(false);
-  const [showLightning, setShowLightning] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeGame, setActiveGame] = useState("Roulette");
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  
+  // Yhteinen keskitetty saldo sovelluksen tasolla
+  const [balance, setBalance] = useState(2000.00);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-const triggerDarkFlash = () => {
-    // Soitetaan ääni public/sounds/0.wav -kansiosta
-    const audio = new Audio("/sounds/0.wav");
-    audio.volume = 0.3; // Asetetaan äänenvoimakkuus 20 % tasolle
-    audio.play().catch((err) => console.error("Audio playback error:", err));
-
-    setIsDarkFlash(true);
-    setShowLightning(true);
-
-    // Salama kestävä animaatio n. 0.6s
-    setTimeout(() => {
-      setShowLightning(false);
-    }, 600);
-
-    // Tummennus kestää 1.2s
-    setTimeout(() => {
-      setIsDarkFlash(false);
-    }, 1200);
-};
-
   return (
     <div
-      className="min-h-screen w-full relative flex flex-col items-center justify-start pt-24 sm:pt-32 overflow-x-hidden"
+      className="fixed inset-0 w-full h-full flex flex-row overflow-hidden select-none"
       style={{
         backgroundImage: `url(${bgImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed",
       }}
     >
-      {/* Tummentava kerros */}
-      <div
-        className={`fixed inset-0 bg-black/80 transition-opacity duration-300 pointer-events-none z-10 ${
-          isDarkFlash ? "opacity-100" : "opacity-0"
-        }`}
-      />
-
-      {/* CANVAKSELLA TOTEUTETTU AITO SALAMA */}
-      {showLightning && <LightningCanvas />}
-
-      <GoldDust />
-
-      {/* 3D-PÄÄ (Piilotetaan isHidden-propilla kun modal on auki) */}
-      {mounted && (
-        <motion.div
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="absolute top-0 left-0 w-full z-30 pointer-events-none"
-        >
-          <CoinCanvas isHidden={isModalOpen} />
-        </motion.div>
-      )}
-
-      {/* PÄÄSISÄLTÖ (z-20) */}
-      <main className="w-full z-20 px-2 sm:px-4 pt-12 sm:pt-0">
-        <GyreRoulette 
-          onZeroWin={triggerDarkFlash} 
-          onModalToggle={(isOpen) => setIsModalOpen(isOpen)} 
+      {/* Vasen sivupalkki (Kiinteä, täysi korkeus) */}
+      <div className="h-full shrink-0 z-40 hidden md:block">
+        <Sidebar 
+          activeGame={activeGame} 
+          onSelectGame={setActiveGame} 
+          onOpenChat={() => setMobileChatOpen(true)}
         />
-      </main>
+      </div>
+
+      {/* Mobiilin alavalikko */}
+      <div className="md:hidden">
+        <Sidebar 
+          activeGame={activeGame} 
+          onSelectGame={setActiveGame} 
+          onOpenChat={() => setMobileChatOpen(true)}
+        />
+      </div>
+
+      {/* Keskialue: Kiinteä matala Header ylhäällä + Rullaava pelialue sen alla */}
+      <div className="flex-1 relative flex flex-col h-full overflow-hidden">
+        
+        {/* Kasinon kiinteä yläpalkki näyttää nyt yhteistä saldoa */}
+        <div className="shrink-0 z-30">
+          <Header 
+            balance={balance} 
+            onDeposit={() => setBalance((prev) => prev + 100.00)} 
+          />
+        </div>
+
+        {/* Pelialueen rullaava kontaineri headerin alapuolella */}
+        <div className="flex-1 relative flex flex-col items-center justify-start overflow-y-auto pb-28 md:pb-24 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <GoldDust />
+
+          {/* Kasvatettu mobiilin ylätilaa (pt-28), jotta ruletti laskee alemmas */}
+          <main className="w-full z-20 px-2 sm:px-4 pt-28 sm:pt-20">
+            {activeGame === "Roulette" ? (
+              <RouletteGame 
+                mounted={mounted} 
+                balance={balance}
+                setBalance={setBalance}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-64 text-[#8C827A] font-serif text-xl">
+                {activeGame} coming soon...
+              </div>
+            )}
+          </main>
+        </div>
+      </div>
+
+      {/* Chat-komponentti (Kiinteä oikealla / mobiilissa modaali) */}
+      <Chat mobileOpen={mobileChatOpen} onCloseMobile={() => setMobileChatOpen(false)} />
     </div>
   );
 }
-
-export default App;
