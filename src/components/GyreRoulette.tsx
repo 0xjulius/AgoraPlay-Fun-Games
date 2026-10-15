@@ -141,7 +141,7 @@ function getTileClasses(n: number): string {
   }
 
   if (c === "green") {
-    return "bg-gradient-to-b from-[#4E946A] to-[#3B7A57] text-white shadow-[inset_0_1px_2px_rgba(255,255,255,0.4),0_2px_4px_rgba(0,0,0,0.1)]";
+    return "bg-gradient-to-b from-[#34B374] to-[#1B7F4F] text-white ring-2 ring-[#D4AF37] shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),0_0_16px_rgba(52,179,116,0.75)]";
   }
 
   return "bg-gradient-to-b from-[#332E2B] to-[#1A1715] text-white shadow-[inset_0_1px_2px_rgba(255,255,255,0.2),0_2px_4px_rgba(0,0,0,0.15)]";
@@ -398,8 +398,11 @@ export default function GyreRoulette({
     if (!strip || !viewport) return;
 
     const viewportWidth = viewport.clientWidth;
+    // Jokaisella ruudulla on vaakamarginaali (TILE_GAP / 2) molemmilla puolilla,
+    // joten kohderuudun vasen reuna on TARGET_INDEX * FULL_TILE_SPAN + TILE_GAP / 2.
     const targetOffset =
-      -(TARGET_INDEX * FULL_TILE_SPAN) + (viewportWidth / 2 - TILE_WIDTH / 2);
+      -(TARGET_INDEX * FULL_TILE_SPAN + TILE_GAP / 2) +
+      (viewportWidth / 2 - TILE_WIDTH / 2);
 
     strip.style.transition = withTransition
       ? "transform 4.2s cubic-bezier(0.11,0.66,0.15,1)"
@@ -526,7 +529,7 @@ export default function GyreRoulette({
                   c === "red"
                     ? "bg-[#E64A53]"
                     : c === "green"
-                      ? "bg-[#3B7A57]"
+                      ? "bg-[#1F9D61] shadow-[0_0_8px_rgba(52,179,116,0.8)]"
                       : "bg-[#24201D]";
 
                 const tileContent = (
@@ -534,7 +537,9 @@ export default function GyreRoulette({
                     className={`tile-number flex items-center justify-center flex-none rounded-md font-semibold text-xs shadow-sm relative w-[26px] h-[26px] text-white ${bgClass} ${
                       isLatest
                         ? "ring-2 ring-amber-400 ring-offset-1 ring-offset-[#FAF6F0]"
-                        : ""
+                        : c === "green"
+                          ? "ring-1 ring-[#D4AF37]"
+                          : ""
                     }`}
                   >
                     {n}
@@ -621,11 +626,16 @@ export default function GyreRoulette({
                       <div className="gold-frame h-full w-full">
                         <div className="gold-frame-inner">
                           <div
-                            className={`tile-number flex items-center justify-center h-full w-full text-2xl font-bold rounded-lg ${getTileClasses(
+                            className={`tile-number relative flex items-center justify-center h-full w-full text-2xl font-bold rounded-lg ${getTileClasses(
                               n,
                             )}`}
                           >
                             {n}
+                            {n === 0 && (
+                              <span className="absolute top-1 right-1.5 text-[10px] font-extrabold tracking-wide text-amber-200 drop-shadow">
+                                x{PAYOUT.green}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -636,11 +646,15 @@ export default function GyreRoulette({
                 return (
                   <div
                     key={`${n}-${i}`}
-                    className={`tile-number flex items-center justify-center flex-none text-2xl font-bold rounded-xl transition-all w-[84px] h-[68px] mx-[5px] ${getTileClasses(
+                    className={`tile-number relative flex items-center justify-center flex-none text-2xl font-bold rounded-xl transition-all w-[84px] h-[68px] mx-[5px] ${getTileClasses(
                       n,
                     )}`}
                   >
                     {n}
+                    {n === 0 && (
+                      <span className="absolute top-1 right-1.5 text-[10px] font-extrabold tracking-wide text-amber-200 drop-shadow">
+                      </span>
+                    )}
                   </div>
                 );
               })}

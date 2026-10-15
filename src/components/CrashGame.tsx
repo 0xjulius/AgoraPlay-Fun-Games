@@ -15,6 +15,31 @@ interface HistoryItem {
   crashed: boolean;
 }
 
+const MY_BETS_STORAGE_KEY = "crashgame:myBets";
+const MY_BETS_MAX = 50;
+
+// Lataa omat vedot localStoragesta. Kesken jääneet ("playing") vedot merkitään hävityiksi,
+// koska kierros on päättynyt sivun sulkeutuessa.
+const loadMyBets = (): LiveBetItem[] => {
+  try {
+    const raw = localStorage.getItem(MY_BETS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(
+        (b): b is LiveBetItem =>
+          !!b && typeof b.id === "string" && typeof b.amount === "number",
+      )
+      .map((b) =>
+        b.status === "playing" ? { ...b, status: "lost" as const } : b,
+      )
+      .slice(0, MY_BETS_MAX);
+  } catch {
+    return [];
+  }
+};
+
 export default function CrashGame({ balance, setBalance }: CrashGameProps) {
   const [gameMode, setGameMode] = useState<"manual" | "autobet">("manual");
   const [betAmount, setBetAmount] = useState<string>("100.00");
@@ -36,12 +61,60 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
   // Live-vedot ja aktiivinen välilehti
   const [liveBets, setLiveBets] = useState<LiveBetItem[]>([]);
   const [activeTab, setActiveTab] = useState<"all" | "my">("all");
+  // Omien vetojen historia, tallennetaan localStorageen
+  const [myBets, setMyBets] = useState<LiveBetItem[]>(loadMyBets);
 
   const hasBetRef = useRef(hasBet);
   const cashedOutRef = useRef(cashedOut);
   const autoCashOutRef = useRef(autoCashOut);
   const pointsRef = useRef<{ t: number; m: number }[]>([]);
   const botTargetsRef = useRef<{ id: string; target: number }[]>([]);
+
+  // Plot-alueen koko pikseleinä, jotta käyrä ja pallo piirretään vääristymättä
+  const plotRef = useRef<HTMLDivElement>(null);
+  const [plotSize, setPlotSize] = useState({ w: 0, h: 0 });
+  // Hiiren alla oleva cashout-merkki (tooltipin näyttämiseen)
+  const [hoveredCashout, setHoveredCashout] = useState<string | null>(null);
+  useEffect(() => {
+    const el = plotRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setPlotSize({ w: width, h: height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Päivitä oman vedon tila historiaan (lisäys vedon alkaessa, päivitys voitossa/häviössä)
+  useEffect(() => {
+    const userBet = liveBets.find((b) => b.isUser);
+    if (!userBet) return;
+    setMyBets((prev) => {
+      const idx = prev.findIndex((b) => b.id === userBet.id);
+      if (idx === -1) return [userBet, ...prev].slice(0, MY_BETS_MAX);
+      const old = prev[idx];
+      if (
+        old.status === userBet.status &&
+        old.multiplier === userBet.multiplier &&
+        old.payout === userBet.payout
+      ) {
+        return prev;
+      }
+      const next = [...prev];
+      next[idx] = userBet;
+      return next;
+    });
+  }, [liveBets]);
+
+  // Tallenna historia localStorageen aina kun se muuttuu
+  useEffect(() => {
+    try {
+      localStorage.setItem(MY_BETS_STORAGE_KEY, JSON.stringify(myBets));
+    } catch {
+      // localStorage ei käytössä (esim. yksityinen selaus) -> jatketaan ilman tallennusta
+    }
+  }, [myBets]);
 
   useEffect(() => {
     hasBetRef.current = hasBet;
@@ -63,24 +136,32 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
     audio.play().catch((err) => console.error("Audio playback error:", err));
   };
 
+  const playWinSound = () => {
+    const audio = new Audio("/sounds/win.wav");
+    audio.play().catch((err) => console.error("Audio playback error:", err));
+  };
+
   const generateBalancedCrashPoint = (): number => {
     const TEST_MODE_TARGET = 0;
     if (TEST_MODE_TARGET) {
       return TEST_MODE_TARGET;
     }
 
-    const array = new Uint32Array(1);
+    // Tasainen satunnaisluku väliltä [0, 1) (53 bitin tarkkuus)
+    const array = new Uint32Array(2);
     window.crypto.getRandomValues(array);
-    const randomValue = array[0] / 4294967296;
+    const r = (array[0] * 2097152 + (array[1] >>> 11)) / 9007199254740992;
 
-    const houseEdge = 0.02;
-    if (randomValue < 0.01) {
-      return 1.0;
-    }
-
-    const calculated = 1.05 + (1 / (1 - randomValue * (1 - houseEdge))) * 0.8;
-    const point = Math.max(1.1, Number(calculated.toFixed(2)));
-    return Math.min(point, 200.0);
+    // Klassinen crash-jakauma: P(kerroin >= m) = (1 - houseEdge) / m
+    //  - ~3 % kierroksista kaatuu heti (1.00x)
+    //  - ~50 % kaatuu alle 2x
+    //  - ~19 % yltää yli 5x, ~10 % yli 10x, ~1 % yli 100x
+    // Jakaumalla on "paksu häntä", joten kertoimet vaihtelevat paljon eikä ole mitään
+    // minimiä, jonka yläpuolella pysyttäisiin (aiempi kaava antoi lähes aina yli 1.86x).
+    const houseEdge = 0.03;
+    const raw = (1 - houseEdge) / (1 - r);
+    const point = Math.floor(raw * 100) / 100;
+    return Math.max(point, 1.0);
   };
 
   useEffect(() => {
@@ -114,6 +195,7 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
             payout: null,
             status: "playing",
             isUser: true,
+            placedAt: Date.now(),
           },
         ]);
       }
@@ -195,7 +277,13 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
         setElapsedSeconds(realElapsed);
 
         let speedFactor = 1.0;
-        if (currentMultVal >= 30) {
+        if (currentMultVal >= 2000) {
+          speedFactor = 8.0;
+        } else if (currentMultVal >= 500) {
+          speedFactor = 5.0;
+        } else if (currentMultVal >= 100) {
+          speedFactor = 3.0;
+        } else if (currentMultVal >= 30) {
           speedFactor = 2.2;
         } else if (currentMultVal >= 20) {
           speedFactor = 1.7;
@@ -225,7 +313,7 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
             );
             const target = botTarget ? botTarget.target : 2.0;
 
-            if (newMult >= target) {
+            if (newMult >= target && target <= crashPoint) {
               hasChanges = true;
               return {
                 ...bet,
@@ -256,7 +344,8 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
           !cashedOutRef.current &&
           autoCashOutRef.current !== "" &&
           Number(autoCashOutRef.current) > 0 &&
-          newMult >= Number(autoCashOutRef.current)
+          newMult >= Number(autoCashOutRef.current) &&
+          Number(autoCashOutRef.current) <= crashPoint
         ) {
           handleCashOut(Number(autoCashOutRef.current));
         }
@@ -330,6 +419,7 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
         payout: null,
         status: "playing",
         isUser: true,
+        placedAt: Date.now(),
       };
       const otherBets = prev.filter((b) => !b.isUser);
       return [userBet, ...otherBets];
@@ -342,6 +432,7 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
     const amount = parseFloat(betAmount);
     const winAmount = amount * mult;
 
+    playWinSound();
     setBalance((prev) => prev + winAmount);
     setCashOutMultiplier(mult);
     setCashOutWinAmount(winAmount);
@@ -404,11 +495,13 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
       : Math.min(9, 3 + Math.floor(Math.log10(displayMult) * 4));
 
   const pickStep = (max: number) => {
-    const steps = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500];
-    for (const st of steps) {
-      if (Math.floor(max / st) <= maxMarks) return st;
+    // 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, ... (ei ylärajaa)
+    for (let mag = 1; ; mag *= 10) {
+      for (const base of [1, 2, 5]) {
+        const st = base * mag;
+        if (Math.floor(max / st) <= maxMarks) return st;
+      }
     }
-    return 500;
   };
   const step = pickStep(viewMax);
 
@@ -423,15 +516,85 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
   const xMaxSeconds = Math.max(8, elapsedSeconds * 1.25);
   const xFrac = (t: number) => Math.min(1, t / xMaxSeconds);
 
-  const points = pointsRef.current;
-  const pathD = points
-    .map(
-      (pt, i) =>
-        `${i === 0 ? "M" : "L"} ${(xFrac(pt.t) * 100).toFixed(2)} ${((1 - yFrac(pt.m)) * 100).toFixed(2)}`,
-    )
-    .join(" ");
+  // ---- KÄYRÄ JA PALLO (pikselikoordinaatit) ----
+  const { w: pw, h: ph } = plotSize;
+  const LABEL_COL = 56; // oikean reunan numerosarakkeen leveys, katkoviiva päättyy tähän
 
-  const ballX = xFrac(elapsedSeconds) * 100;
+  const toPx = (t: number, m: number) => ({
+    x: xFrac(t) * pw,
+    y: (1 - yFrac(m)) * ph,
+  });
+
+  // Harvennetaan pisteet (max ~160), jotta SVG pysyy kevyenä pitkälläkin kierroksella
+  const rawPoints = pointsRef.current;
+  const stride = Math.max(1, Math.ceil(rawPoints.length / 160));
+  const curvePts = rawPoints
+    .filter((_, i) => i % stride === 0)
+    .map((pt) => toPx(pt.t, pt.m));
+  // Viimeinen piste on aina pallon oikea sijainti, jolloin käyrä yltää täsmälleen palloon
+  const head = toPx(elapsedSeconds, currentMultiplier);
+  curvePts.push(head);
+
+  // Pehmennetty käyrä (neliölliset Bézier-käyrät pisteiden välipisteiden kautta)
+  const f = (n: number) => n.toFixed(1);
+  let linePath = "";
+  if (curvePts.length > 1) {
+    linePath = `M ${f(curvePts[0].x)} ${f(curvePts[0].y)}`;
+    for (let i = 1; i < curvePts.length - 1; i++) {
+      const mx = (curvePts[i].x + curvePts[i + 1].x) / 2;
+      const my = (curvePts[i].y + curvePts[i + 1].y) / 2;
+      linePath += ` Q ${f(curvePts[i].x)} ${f(curvePts[i].y)} ${f(mx)} ${f(my)}`;
+    }
+    linePath += ` L ${f(head.x)} ${f(head.y)}`;
+  }
+  const areaPath = linePath
+    ? `${linePath} L ${f(head.x)} ${f(ph)} L ${f(curvePts[0].x)} ${f(ph)} Z`
+    : "";
+
+  // ---- CASHOUT-MERKINNÄT KÄYRÄLLÄ ----
+  // Cashoutin ajankohta haetaan käyrän pisteistä kertoimen perusteella (kerroin kasvaa
+  // aina ajan funktiona), joten merkintä osuu täsmälleen käyrälle eikä vaadi lisätietoa vedolle.
+  const timeline = [...rawPoints, { t: elapsedSeconds, m: currentMultiplier }];
+  const timeAtMultiplier = (m: number): number => {
+    if (m <= timeline[0].m) return timeline[0].t;
+    for (let i = 1; i < timeline.length; i++) {
+      if (timeline[i].m >= m) {
+        const a = timeline[i - 1];
+        const b = timeline[i];
+        const span = b.m - a.m;
+        return span <= 0 ? b.t : a.t + ((m - a.m) / span) * (b.t - a.t);
+      }
+    }
+    return timeline[timeline.length - 1].t;
+  };
+
+  const cashoutMarkers =
+    isRunning && pw > 0 && ph > 0
+      ? liveBets
+          .filter((b) => b.status === "won" && b.multiplier && b.payout)
+          .map((b) => {
+            const mult = b.multiplier as number;
+            return {
+              id: b.id,
+              isUser: !!b.isUser,
+              username: b.username,
+              amount: b.amount,
+              multiplier: mult,
+              payout: b.payout as number,
+              ...toPx(timeAtMultiplier(mult), mult),
+            };
+          })
+      : [];
+  // Kaikkien merkkien summat näytetään. Vierekkäiset summat porrastetaan kahdelle
+  // korkeudelle (vasemmalta oikealle), jotta tekstit eivät mene päällekkäin.
+  const labelRow = new Map(
+    [...cashoutMarkers]
+      .sort((a, b) => a.x - b.x)
+      .map((c, i) => [c.id, i % 2] as const),
+  );
+
+  const isCrashed = status === "crashed";
+  const accent = isCrashed ? "#F43F5E" : "#F59E0B";
   const ballY = (1 - yFrac(currentMultiplier)) * 100;
 
   // Toimintopainike
@@ -441,7 +604,7 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
         <button
           onClick={handlePlaceBet}
           disabled={status !== "waiting"}
-          className="w-full py-3.5 px-2 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-serif font-bold text-sm sm:text-base rounded-2xl shadow-lg border border-amber-400/50 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap leading-tight"
+          className="w-full py-3.5 px-2 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 enabled:hover:from-amber-500 enabled:hover:to-amber-600 text-white font-serif font-bold text-sm sm:text-base rounded-2xl shadow-lg border border-amber-400/50 cursor-pointer transition-all active:scale-[0.98] disabled:from-amber-700 disabled:via-amber-700 disabled:to-amber-800 disabled:border-amber-600 disabled:cursor-not-allowed whitespace-nowrap leading-tight"
         >
           {status === "waiting"
             ? `Place Bet (${countdown.toFixed(1)}s)`
@@ -453,7 +616,7 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
       return (
         <button
           disabled
-          className="w-full py-4 bg-gradient-to-r from-[#D4AF37]/20 via-[#F3E5AB]/40 to-[#D4AF37]/20 border border-[#D4AF37]/60 text-amber-950 font-serif rounded-2xl shadow-inner cursor-default flex flex-col items-center justify-center gap-1"
+          className="w-full py-4 bg-gradient-to-r from-[#F3E5AB] via-[#FBF3D5] to-[#F3E5AB] border border-[#D4AF37] text-amber-950 font-serif rounded-2xl shadow-inner cursor-default flex flex-col items-center justify-center gap-1"
         >
           <div className="flex items-center gap-1.5 text-xs tracking-wider uppercase font-bold text-amber-800">
             <CheckCircle2 className="w-4 h-4 text-amber-700" />
@@ -509,12 +672,12 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
     return (
       <button
         disabled
-        className="w-full py-4 bg-rose-900/20 border border-rose-600/40 text-rose-900 font-serif font-bold rounded-2xl cursor-not-allowed flex flex-col items-center justify-center gap-0.5"
+        className="w-full py-4 bg-rose-100 border border-rose-400 text-rose-900 font-serif font-bold rounded-2xl cursor-not-allowed flex flex-col items-center justify-center gap-0.5"
       >
-        <span className="text-xs uppercase tracking-wider font-bold text-rose-700">
+        <span className="text-xs uppercase tracking-wider font-bold text-rose-800">
           Round Ended
         </span>
-        <span className="text-xl sm:text-2xl font-extrabold text-rose-800 tracking-tight">
+        <span className="text-xl sm:text-2xl font-extrabold text-rose-900 tracking-tight">
           -{Number(betAmount).toFixed(2)} USD
         </span>
       </button>
@@ -558,50 +721,184 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(26,22,20,0.35)_0%,_transparent_75%)] pointer-events-none" />
           )}
 
-          {/* PLOT-ALUE */}
-          <div className="absolute left-16 right-24 top-16 bottom-16 pointer-events-none z-10">
-            {scaleMarks.map((mark) => (
-              <div
-                key={`grid-${mark}`}
-                className="absolute left-0 right-0 border-t border-dashed border-[#FAF6F0]/15"
-                style={{ top: `${(1 - yFrac(mark)) * 100}%` }}
-              />
-            ))}
-
-            {(status === "flying" || status === "crashed") &&
-              points.length > 1 && (
-                <svg
-                  className="absolute inset-0 w-full h-full overflow-visible"
-                  preserveAspectRatio="none"
-                  viewBox="0 0 100 100"
-                >
-                  <path
-                    d={pathD}
-                    fill="none"
-                    stroke={status === "crashed" ? "#F43F5E" : "#F59E0B"}
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    vectorEffect="non-scaling-stroke"
-                    className="filter drop-shadow-[0_0_6px_rgba(245,158,11,0.8)] opacity-90"
-                  />
-                </svg>
-              )}
-
-            {status === "flying" && (
-              <div
-                className="absolute flex items-center justify-center"
-                style={{
-                  left: `${ballX}%`,
-                  top: `${ballY}%`,
-                  transform: "translate(-50%, -50%)",
-                }}
+          {/* PLOT-ALUE: käyrä, täyttö ja pallo yhdessä SVG:ssä (pikselikoordinaatit) */}
+          <div
+            ref={plotRef}
+            className="absolute left-16 right-6 top-16 bottom-16 pointer-events-none z-10"
+          >
+            {isRunning && linePath && pw > 0 && ph > 0 && (
+              <svg
+                className="absolute inset-0 overflow-visible"
+                width={pw}
+                height={ph}
+                viewBox={`0 0 ${pw} ${ph}`}
               >
-                <div className="relative flex items-center justify-center">
-                  <div className="absolute -inset-2 rounded-full bg-amber-400/50 blur-md animate-ping" />
-                  <div className="w-3.5 h-3.5 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-200 shadow-[0_0_12px_rgba(245,158,11,1)] border border-white" />
-                </div>
-              </div>
+                <defs>
+                  {/* Viiva vaalenee alusta kohti palloa */}
+                  <linearGradient
+                    id="crash-line-grad"
+                    gradientUnits="userSpaceOnUse"
+                    x1={curvePts[0].x}
+                    y1="0"
+                    x2={head.x}
+                    y2="0"
+                  >
+                    <stop offset="0%" stopColor={accent} stopOpacity="0.25" />
+                    <stop offset="100%" stopColor={isCrashed ? "#FDA4AF" : "#FDE68A"} stopOpacity="1" />
+                  </linearGradient>
+                  {/* Käyrän alapuolen täyttö */}
+                  <linearGradient id="crash-area-grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={accent} stopOpacity="0.35" />
+                    <stop offset="100%" stopColor={accent} stopOpacity="0" />
+                  </linearGradient>
+                  <radialGradient id="crash-ball-grad" cx="35%" cy="35%" r="70%">
+                    <stop offset="0%" stopColor="#FFFFFF" />
+                    <stop offset="45%" stopColor={isCrashed ? "#FDA4AF" : "#FDE68A"} />
+                    <stop offset="100%" stopColor={accent} />
+                  </radialGradient>
+                </defs>
+
+                <path d={areaPath} fill="url(#crash-area-grad)" />
+
+                {/* Vaakaviiva pallosta oikean reunan kerroinmerkkiin */}
+                {head.x < pw - LABEL_COL && (
+                  <line
+                    x1={head.x}
+                    y1={head.y}
+                    x2={pw - LABEL_COL}
+                    y2={head.y}
+                    stroke={accent}
+                    strokeOpacity="0.7"
+                    strokeWidth="1.5"
+                    strokeDasharray="2 5"
+                    strokeLinecap="round"
+                  />
+                )}
+
+                <path
+                  d={linePath}
+                  fill="none"
+                  stroke="url(#crash-line-grad)"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ filter: `drop-shadow(0 0 6px ${accent})` }}
+                />
+
+                {/* Pelaajien cashoutit käyrällä */}
+                {cashoutMarkers.map((c) => (
+                  <g
+                    key={c.id}
+                    transform={`translate(${f(c.x)} ${f(c.y)})`}
+                    style={{ pointerEvents: "all", cursor: "pointer" }}
+                    onMouseEnter={() => setHoveredCashout(c.id)}
+                    onMouseLeave={() =>
+                      setHoveredCashout((cur) => (cur === c.id ? null : cur))
+                    }
+                  >
+                    {/* Näkymätön, merkkiä isompi osuma-alue hoverille */}
+                    <circle r="15" fill="transparent" />
+                    <g
+                      style={{
+                        transform: hoveredCashout === c.id ? "scale(1.25)" : "scale(1)",
+                        transition: "transform 120ms ease-out",
+                      }}
+                    >
+                    <g>
+                      <animateTransform
+                        attributeName="transform"
+                        type="scale"
+                        from="0"
+                        to="1"
+                        dur="0.25s"
+                        fill="freeze"
+                      />
+                      {c.isUser ? (
+                        <>
+                          <circle
+                            r="11"
+                            fill="url(#crash-ball-grad)"
+                            stroke="#FFFFFF"
+                            strokeWidth="2"
+                            style={{ filter: "drop-shadow(0 0 6px #F59E0B)" }}
+                          />
+                          <text
+                            textAnchor="middle"
+                            dy="2.5"
+                            fontSize="7"
+                            fontWeight="800"
+                            fill="#1A1614"
+                            fontFamily="ui-monospace, monospace"
+                          >
+                            YOU
+                          </text>
+                        </>
+                      ) : (
+                        <>
+                          <circle
+                            r="9"
+                            fill="#1A1614"
+                            fillOpacity="0.85"
+                            stroke="#D4AF37"
+                            strokeOpacity="0.8"
+                            strokeWidth="1.5"
+                          />
+                          <circle cy="-2.5" r="2.6" fill="#FAF6F0" />
+                          <path d="M -4.8 5.2 a4.8 4 0 0 1 9.6 0 z" fill="#FAF6F0" />
+                        </>
+                      )}
+                    </g>
+                    </g>
+                    <text
+                        pointerEvents="none"
+                        y={c.isUser ? -18 : labelRow.get(c.id) === 0 ? -15 : -28}
+                        textAnchor="middle"
+                        fontSize="11"
+                        fontWeight="800"
+                        fill={c.isUser ? "#FDE68A" : "#6EE7B7"}
+                        stroke="rgba(0,0,0,0.65)"
+                        strokeWidth="3"
+                        paintOrder="stroke"
+                        fontFamily="ui-monospace, monospace"
+                      >
+                        ${c.payout.toFixed(2)}
+                      </text>
+                  </g>
+                ))}
+
+                {/* Pallo / räjähdys */}
+                <g transform={`translate(${f(head.x)} ${f(head.y)})`}>
+                  {!isCrashed ? (
+                    <>
+                      <circle r="10" fill={accent} opacity="0.3">
+                        <animate attributeName="r" values="8;22;8" dur="1.6s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="0.4;0;0.4" dur="1.6s" repeatCount="indefinite" />
+                      </circle>
+                      <circle
+                        r="7"
+                        fill="url(#crash-ball-grad)"
+                        stroke="#FFFFFF"
+                        strokeWidth="2"
+                        style={{ filter: `drop-shadow(0 0 8px ${accent})` }}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <circle r="6" fill="none" stroke={accent} strokeWidth="3">
+                        <animate attributeName="r" from="6" to="34" dur="0.7s" fill="freeze" />
+                        <animate attributeName="opacity" from="1" to="0" dur="0.7s" fill="freeze" />
+                      </circle>
+                      <circle
+                        r="6"
+                        fill={accent}
+                        stroke="#FFFFFF"
+                        strokeWidth="2"
+                        style={{ filter: `drop-shadow(0 0 10px ${accent})` }}
+                      />
+                    </>
+                  )}
+                </g>
+              </svg>
             )}
           </div>
 
@@ -649,20 +946,86 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
             )}
           </div>
 
-          {/* Oikean reunan asteikko */}
-          <div className="absolute right-6 top-16 bottom-16 w-16 pointer-events-none z-10 font-mono text-xs font-bold text-[#FAF6F0] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+          {/* Asteikko: katkoviiva + numero samassa rivissä, jolloin ne ovat aina samalla tasolla.
+              Ei transitiota, jotta rivit eivät jää jälkeen kun asteikko skaalautuu. */}
+          <div className="absolute left-16 right-6 top-16 bottom-16 pointer-events-none z-10">
             {scaleMarks.map((mark) => (
               <div
                 key={mark}
-                className="absolute left-0 right-0 text-right pr-2 animate-in fade-in duration-500"
+                className="absolute left-0 right-0 flex items-center gap-2 transition-none"
                 style={{
                   top: `${(1 - yFrac(mark)) * 100}%`,
                   transform: "translateY(-50%)",
                 }}
               >
-                x{mark}
+                <div className="flex-1 border-t border-dashed border-[#FAF6F0]/50 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" />
+                <span className="w-12 text-right pr-2 font-mono text-xs font-bold text-[#FAF6F0] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                  x{mark}
+                </span>
               </div>
             ))}
+
+            {/* Nykyisen kertoimen merkki pallon korkeudella */}
+            {isRunning && (
+              <div
+                className="absolute right-0 transition-none"
+                style={{ top: `${ballY}%`, transform: "translateY(-50%)" }}
+              >
+                <span
+                  className={`block px-1.5 py-0.5 rounded-md font-mono text-[11px] font-extrabold shadow-lg ${
+                    isCrashed ? "bg-rose-500 text-white" : "bg-amber-400 text-[#1A1614]"
+                  }`}
+                >
+                  {currentMultiplier.toFixed(2)}x
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* TOOLTIP: hoverattavan cashout-merkin tiedot */}
+          <div className="absolute left-16 right-6 top-16 bottom-16 pointer-events-none z-40">
+            {(() => {
+              const m = cashoutMarkers.find((c) => c.id === hoveredCashout);
+              if (!m) return null;
+              const profit = m.payout - m.amount;
+              const showAbove = m.y > ph * 0.55;
+              return (
+                <div
+                  className="absolute w-44 rounded-xl border border-[#D4AF37]/50 bg-[#1A1614]/95 px-3 py-2.5 text-xs font-serif text-[#FAF6F0] shadow-2xl backdrop-blur-sm animate-in fade-in duration-150"
+                  style={{
+                    left: Math.min(Math.max(m.x, 88), Math.max(88, pw - 88)),
+                    top: m.y,
+                    transform: showAbove
+                      ? "translate(-50%, calc(-100% - 46px))"
+                      : "translate(-50%, 20px)",
+                  }}
+                >
+                  <div className="flex items-center gap-1.5 pb-1.5 mb-1.5 border-b border-[#D4AF37]/30 font-bold text-amber-300 truncate">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                    {m.username}
+                    {m.isUser && " (You)"}
+                  </div>
+                  <div className="flex flex-col gap-1 font-mono">
+                    <div className="flex justify-between">
+                      <span className="text-[#FAF6F0]/60">Bet</span>
+                      <span className="font-bold">${m.amount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#FAF6F0]/60">Cash out</span>
+                      <span className="font-bold text-emerald-300">{m.multiplier.toFixed(2)}x</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#FAF6F0]/60">Payout</span>
+                      <span className="font-bold">${m.payout.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#FAF6F0]/60">Profit</span>
+                      <span className="font-bold text-emerald-300">+${profit.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Ajanlasku alhaalla */}
@@ -797,7 +1160,7 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
 
       {/* 3. LIVE BETS -KOMPONENTTI PELIN ALAPUOLELLA */}
       <LiveBetsHistory
-        bets={liveBets}
+        bets={activeTab === "my" ? myBets : liveBets}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
