@@ -5,6 +5,7 @@ import Chat from "./components/Chat";
 import Header from "./components/Header";
 import RouletteGame from "./components/RouletteGame";
 import CrashGame from "./components/CrashGame";
+import PlinkoGame from "./components/PlinkoGame"; // Varmista oikea polku
 import GoldDust from "./components/GoldDust";
 import bgImage from "./assets/bg2.png";
 
@@ -19,7 +20,11 @@ export default function App() {
   const location = useLocation();
 
   // Määritetään aktiivinen peli nykyisen URL-polun perusteella
-  const activeGame = location.pathname.includes("crash") ? "Crash" : "Roulette";
+  const activeGame = location.pathname.includes("crash") 
+    ? "Crash" 
+    : location.pathname.includes("plinko") 
+    ? "Plinko" 
+    : "Roulette";
 
   useEffect(() => {
     setMounted(true);
@@ -28,6 +33,8 @@ export default function App() {
   const handleSelectGame = (game: string) => {
     if (game === "Crash") {
       navigate("/crash");
+    } else if (game === "Plinko") {
+      navigate("/plinko");
     } else if (game === "Roulette") {
       navigate("/");
     }
@@ -76,7 +83,7 @@ export default function App() {
         <div className="flex-1 relative flex flex-col items-center justify-start overflow-y-auto pb-28 md:pb-24 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <GoldDust />
 
-          {/* Reititys ruletin ja crash-pelin välillä */}
+          {/* Reititys pelien välillä */}
           <main className="w-full z-20 px-2 sm:px-4 pt-28 sm:pt-20">
             <Routes>
               <Route 
@@ -93,6 +100,15 @@ export default function App() {
                 path="/crash" 
                 element={
                   <CrashGame 
+                    balance={balance}
+                    setBalance={setBalance}
+                  />
+                } 
+              />
+              <Route 
+                path="/plinko" 
+                element={
+                  <PlinkoGame 
                     balance={balance}
                     setBalance={setBalance}
                   />
