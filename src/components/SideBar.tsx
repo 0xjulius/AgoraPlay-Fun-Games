@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { 
   CircleDollarSign, 
@@ -19,19 +21,18 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { name: "Roulette", icon: CircleDollarSign },
-  { name: "Crash", icon: Rocket },
-  { name: "Duels", icon: RefreshCw },
-  { name: "Plinko", icon: Triangle },
-  { name: "Dice", icon: Dices },
-  { name: "Towers", icon: Gem },
-  { name: "Mines", icon: Bomb },
+  { name: "Roulette", icon: CircleDollarSign, available: true },
+  { name: "Crash", icon: Rocket, available: true }, // Nyt myös Crash on aktiivinen!
+  { name: "Duels", icon: RefreshCw, available: false },
+  { name: "Plinko", icon: Triangle, available: true },
+  { name: "Dice", icon: Dices, available: false },
+  { name: "Towers", icon: Gem, available: false },
+  { name: "Mines", icon: Bomb, available: false },
 ];
 
-export default function Sidebar({ activeGame = "Roulette", onSelectGame, onOpenChat }: SidebarProps) {
+export default function Sidebar({ activeGame = "Plinko", onSelectGame, onOpenChat }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Pakotetaan collapsed-tila automaattisesti, jos näyttö on riittävän kapea (esim. alle 1280px / lg)
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1280) {
@@ -41,12 +42,20 @@ export default function Sidebar({ activeGame = "Roulette", onSelectGame, onOpenC
       }
     };
 
-    // Tarkistetaan heti alussa
     handleResize();
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const handleItemClick = (item: typeof navItems[0]) => {
+    if (!item.available) return;
+
+    // Jos haluat erillisen reitityksen esim. Rouletuelle tai Crashille, voit lisätä tarkistuksen tähän:
+    // if (item.name === "Roulette") { router.push("/roulette"); return; }
+    // if (item.name === "Crash") { router.push("/crash"); return; }
+
+    onSelectGame?.(item.name);
+  };
 
   return (
     <>
@@ -59,13 +68,16 @@ export default function Sidebar({ activeGame = "Roulette", onSelectGame, onOpenC
           return (
             <button
               key={item.name}
-              onClick={() => onSelectGame?.(item.name)}
-              className={`p-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center ${
-                isActive
-                  ? "bg-[#D4AF37]/20 text-[#8C6D18] border border-[#D4AF37]/40 shadow-inner"
-                  : "text-[#8C827A] hover:text-[#2D2621]"
+              onClick={() => handleItemClick(item)}
+              disabled={!item.available}
+              className={`p-2.5 rounded-xl transition-all flex items-center justify-center relative ${
+                !item.available
+                  ? "opacity-40 cursor-not-allowed"
+                  : isActive
+                  ? "bg-[#D4AF37]/20 text-[#8C6D18] border border-[#D4AF37]/40 shadow-inner cursor-pointer"
+                  : "text-[#8C827A] hover:text-[#2D2621] cursor-pointer"
               }`}
-              title={item.name}
+              title={item.available ? item.name : `${item.name} (Coming soon)`}
             >
               <Icon className={`w-5 h-5 ${isActive ? "text-[#D4AF37]" : "text-[#8C827A]"}`} />
             </button>
@@ -110,16 +122,27 @@ export default function Sidebar({ activeGame = "Roulette", onSelectGame, onOpenC
             return (
               <button
                 key={item.name}
-                onClick={() => onSelectGame?.(item.name)}
-                className={`w-full flex items-center gap-3.5 px-3 py-3 rounded-2xl font-medium text-sm transition-all cursor-pointer ${
-                  isActive
-                    ? "bg-[#D4AF37]/15 text-[#8C6D18] border border-[#D4AF37]/40 shadow-inner font-bold"
-                    : "text-[#8C827A] hover:text-[#2D2621] hover:bg-[#F0E8DC]/60 border border-transparent"
+                onClick={() => handleItemClick(item)}
+                disabled={!item.available}
+                className={`w-full flex items-center justify-between px-3 py-3 rounded-2xl font-medium text-sm transition-all ${
+                  !item.available
+                    ? "opacity-50 cursor-not-allowed bg-transparent text-[#8C827A]/60 border border-transparent"
+                    : isActive
+                    ? "bg-[#D4AF37]/15 text-[#8C6D18] border border-[#D4AF37]/40 shadow-inner font-bold cursor-pointer"
+                    : "text-[#8C827A] hover:text-[#2D2621] hover:bg-[#F0E8DC]/60 border border-transparent cursor-pointer"
                 }`}
-                title={isCollapsed ? item.name : undefined}
+                title={isCollapsed ? (!item.available ? `${item.name} (Coming soon)` : item.name) : undefined}
               >
-                <Icon className={`w-5 h-5 shrink-0 ${isActive ? "text-[#D4AF37]" : "text-[#8C827A]"}`} />
-                {!isCollapsed && <span className="truncate">{item.name}</span>}
+                <div className="flex items-center gap-3.5 truncate">
+                  <Icon className={`w-5 h-5 shrink-0 ${isActive ? "text-[#D4AF37]" : "text-[#8C827A]"}`} />
+                  {!isCollapsed && <span className="truncate">{item.name}</span>}
+                </div>
+
+                {!isCollapsed && !item.available && (
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-[#EFE8DC] text-stone-500 border border-[#E2D6C3]/60 shrink-0">
+                    Soon
+                  </span>
+                )}
               </button>
             );
           })}
