@@ -21,6 +21,7 @@ export default function PlinkoPage() {
       style={{
         backgroundImage: `url(${bgImage})`,
         backgroundSize: "cover",
+        backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
       }}
     >
