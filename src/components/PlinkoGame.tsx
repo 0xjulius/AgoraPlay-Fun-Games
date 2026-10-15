@@ -64,37 +64,37 @@ const BOTTOM_PAD = 18;
 
 const HALF_PAYTABLE: Record<Risk, Record<number, number[]>> = {
   low: {
-    8: [5.55, 2.6, 1.34, 0.81, 0.54],
-    9: [4.79, 2.39, 1.2, 0.73, 0.47],
-    10: [7.83, 3.91, 2.05, 1.21, 0.75, 0.56],
-    11: [6.73, 3.5, 1.92, 1.1, 0.69, 0.48],
-    12: [10.16, 5.36, 2.96, 1.76, 1.11, 0.74, 0.55],
-    13: [8.98, 4.89, 2.73, 1.58, 1.01, 0.72, 0.5],
-    14: [13.33, 7.27, 4.23, 2.58, 1.56, 1.01, 0.74, 0.55],
-    15: [12.47, 6.75, 3.93, 2.38, 1.48, 0.96, 0.67, 0.52],
-    16: [17.46, 9.63, 5.66, 3.4, 2.17, 1.42, 0.94, 0.76, 0.57],
+    8: [5.82, 2.73, 1.41, 0.85, 0.57],
+    9: [5.03, 2.51, 1.26, 0.77, 0.49],
+    10: [8.21, 4.1, 2.15, 1.27, 0.79, 0.59],
+    11: [7.07, 3.68, 2.02, 1.16, 0.72, 0.5],
+    12: [10.67, 5.63, 3.11, 1.85, 1.17, 0.78, 0.58],
+    13: [9.43, 5.14, 2.87, 1.66, 1.06, 0.76, 0.53],
+    14: [14.0, 7.64, 4.44, 2.71, 1.64, 1.06, 0.78, 0.58],
+    15: [13.12, 7.1, 4.13, 2.5, 1.56, 1.01, 0.7, 0.55],
+    16: [18.32, 10.1, 5.94, 3.57, 2.28, 1.49, 0.99, 0.8, 0.6],
   },
   medium: {
-    8: [13.34, 3.73, 1.33, 0.62, 0.36],
-    9: [10.53, 3.13, 1.13, 0.49, 0.22],
-    10: [20.37, 6.64, 2.48, 1.15, 0.62, 0.35],
-    11: [17.47, 5.82, 2.21, 0.93, 0.47, 0.29],
-    12: [35.3, 12.08, 4.46, 2.04, 1.11, 0.56, 0.28],
-    13: [30.72, 10.93, 4.13, 1.77, 0.83, 0.47, 0.24],
-    14: [65.6, 23.43, 8.9, 3.75, 1.69, 0.94, 0.47, 0.37],
-    15: [58.7, 21.63, 8.03, 3.4, 1.54, 0.74, 0.37, 0.25],
-    16: [115.55, 41.6, 15.71, 6.66, 3.05, 1.48, 0.83, 0.46, 0.37],
+    8: [14.04, 3.92, 1.4, 0.65, 0.38],
+    9: [11.05, 3.28, 1.19, 0.51, 0.23],
+    10: [21.44, 6.99, 2.61, 1.21, 0.65, 0.37],
+    11: [18.36, 6.12, 2.32, 0.98, 0.49, 0.3],
+    12: [37.11, 12.7, 4.69, 2.14, 1.17, 0.59, 0.29],
+    13: [32.28, 11.49, 4.34, 1.86, 0.87, 0.49, 0.25],
+    14: [68.91, 24.61, 9.35, 3.94, 1.78, 0.99, 0.49, 0.39],
+    15: [61.74, 22.75, 8.45, 3.58, 1.62, 0.78, 0.39, 0.26],
+    16: [121.57, 43.77, 16.53, 7.01, 3.21, 1.56, 0.87, 0.48, 0.39],
   },
   high: {
-    8: [30.43, 4.35, 1.04, 0.43, 0.26],
-    9: [20.72, 3.11, 0.76, 0.28, 0.12],
-    10: [72.9, 11.85, 2.46, 0.82, 0.36, 0.27],
-    11: [51.82, 7.97, 1.71, 0.56, 0.24, 0.12],
-    12: [178.79, 27.51, 5.96, 1.65, 0.73, 0.37, 0.28],
-    13: [132.35, 20.49, 4.27, 1.2, 0.43, 0.21, 0.13],
-    14: [436.16, 68.15, 13.63, 3.73, 1.36, 0.64, 0.36, 0.27],
-    15: [330.77, 53.01, 11.03, 2.76, 0.93, 0.38, 0.17, 0.13],
-    16: [1063.37, 175.69, 36.06, 8.78, 2.77, 1.11, 0.46, 0.37, 0.28],
+    8: [32.07, 4.58, 1.1, 0.45, 0.27],
+    9: [21.74, 3.26, 0.8, 0.29, 0.13],
+    10: [76.83, 12.49, 2.59, 0.86, 0.38, 0.28],
+    11: [54.44, 8.37, 1.8, 0.59, 0.25, 0.13],
+    12: [187.64, 28.87, 6.25, 1.73, 0.77, 0.39, 0.29],
+    13: [139.04, 21.53, 4.49, 1.26, 0.45, 0.22, 0.14],
+    14: [458.9, 71.7, 14.34, 3.92, 1.43, 0.67, 0.38, 0.28],
+    15: [347.6, 55.71, 11.59, 2.9, 0.98, 0.4, 0.18, 0.14],
+    16: [1117.95, 184.71, 37.91, 9.23, 2.91, 1.17, 0.48, 0.39, 0.29],
   },
 };
 
@@ -123,7 +123,12 @@ function fmtMult(m: number): string {
 }
 
 function fmtCurrency(n: number): string {
-  return n.toLocaleString("fi-FI", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+  return (
+    n.toLocaleString("fi-FI", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }) + " €"
+  );
 }
 
 function geometry(rows: number) {
@@ -227,7 +232,10 @@ export default function PlinkoGame({
       id: ++idRef.current,
       x: gg.cx + (ball.bin - ball.rows / 2) * gg.sp,
       y: gg.binTop - 12,
-      text: payout >= 0.005 ? `+${fmtCurrency(payout)}` : `-${fmtCurrency(Math.abs(payout))}`,
+      text:
+        payout >= 0.005
+          ? `+${fmtCurrency(payout)}`
+          : `-${fmtCurrency(Math.abs(payout))}`,
       win: profit > 0,
       ts: now,
     });
@@ -420,14 +428,15 @@ export default function PlinkoGame({
       return {
         x: last.x,
         y: last.y,
-        opacity: ball.settled ? Math.max(0, 1 - (now - ball.settledAt) / 220) : 1,
+        opacity: ball.settled
+          ? Math.max(0, 1 - (now - ball.settledAt) / 220)
+          : 1,
       };
     }
 
     const s = Math.floor(elapsed / STEP_MS);
     const t = (elapsed - s * STEP_MS) / STEP_MS;
-    const from =
-      s === 0 ? { x: g.cx, y: -ball.r * 2 } : ball.stages[s - 1];
+    const from = s === 0 ? { x: g.cx, y: -ball.r * 2 } : ball.stages[s - 1];
     const to = ball.stages[s];
 
     const x = from.x + (to.x - from.x) * t;
@@ -511,7 +520,6 @@ export default function PlinkoGame({
 
           {/* Game Layout: Desktop (lg+) rinnakkain, mobiili/tablet allekkain */}
           <div className="flex flex-col lg:grid lg:grid-cols-[320px_1fr] gap-4 mb-6">
-            
             {/* BOARD & MOBILE PLACE BET: Mobiilissa ja tableteissa Action Button tulee suoraan laudan alle ennen kontrollipaneelia */}
             <div className="order-1 lg:order-2 flex flex-col gap-4">
               <div className="rounded-2xl border border-[#E2D6C3] bg-[#EFE8DC] shadow-[inset_0_2px_6px_rgba(0,0,0,0.05)] p-3 sm:p-4 flex flex-col">
@@ -526,7 +534,9 @@ export default function PlinkoGame({
                         return (
                           <motion.div
                             key={r.id}
-                            initial={index === 0 ? { opacity: 0, scale: 0.2 } : false}
+                            initial={
+                              index === 0 ? { opacity: 0, scale: 0.2 } : false
+                            }
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{
                               type: "spring",
@@ -581,8 +591,18 @@ export default function PlinkoGame({
 
                   {pegs.map((p) => (
                     <g key={p.key}>
-                      <circle cx={p.x} cy={p.y + 1.2} r={g.pegR} fill="rgba(0,0,0,0.12)" />
-                      <circle cx={p.x} cy={p.y} r={g.pegR} fill="url(#plinko-peg)" />
+                      <circle
+                        cx={p.x}
+                        cy={p.y + 1.2}
+                        r={g.pegR}
+                        fill="rgba(0,0,0,0.12)"
+                      />
+                      <circle
+                        cx={p.x}
+                        cy={p.y}
+                        r={g.pegR}
+                        fill="url(#plinko-peg)"
+                      />
                     </g>
                   ))}
 
@@ -598,7 +618,10 @@ export default function PlinkoGame({
                         stroke="#FFFFFF"
                         strokeWidth="1.5"
                         opacity={pos.opacity}
-                        style={{ filter: "drop-shadow(0 2px 4px rgba(180,120,20,0.55))" }}
+                        style={{
+                          filter:
+                            "drop-shadow(0 2px 4px rgba(180,120,20,0.55))",
+                        }}
                       />
                     );
                   })}
@@ -606,7 +629,9 @@ export default function PlinkoGame({
                   {multipliers.map((m, k) => {
                     const tier = TIERS[tierIndex(m)];
                     const hitAt = hitsRef.current[k];
-                    const p = hitAt ? Math.min(1, Math.max(0, (now - hitAt) / 260)) : 1;
+                    const p = hitAt
+                      ? Math.min(1, Math.max(0, (now - hitAt) / 260))
+                      : 1;
                     const dip = hitAt && p < 1 ? 7 * Math.sin(Math.PI * p) : 0;
                     const x = g.cx + (k - rows / 2) * g.sp - binW / 2;
                     return (
@@ -673,9 +698,7 @@ export default function PlinkoGame({
               </div>
 
               {/* Mobiilissa ja tableteissa "Place bet" näkyy heti pelilaudan alapuolella */}
-              <div className="block lg:hidden">
-                {actionButton}
-              </div>
+              <div className="block lg:hidden">{actionButton}</div>
             </div>
 
             {/* CONTROLS */}
@@ -798,7 +821,8 @@ export default function PlinkoGame({
               {mode === "auto" && (
                 <div className="flex flex-col gap-2">
                   <div className="text-xs font-semibold px-1 text-[#8C827A]">
-                    Number of Bets <span className="font-normal">(0 = endless)</span>
+                    Number of Bets{" "}
+                    <span className="font-normal">(0 = endless)</span>
                   </div>
                   <div className="flex items-center rounded-xl px-3 bg-[#FAF6F0] border border-[#E2D6C3] shadow-inner">
                     <input
@@ -815,9 +839,7 @@ export default function PlinkoGame({
               )}
 
               {/* Desktopilla "Place bet" näkyy kontrollipaneelin alaosassa, mobiilissa se on piilotettu ja siirretty pelin alle */}
-              <div className="hidden lg:block">
-                {actionButton}
-              </div>
+              <div className="hidden lg:block">{actionButton}</div>
             </div>
           </div>
 
@@ -867,8 +889,8 @@ export default function PlinkoGame({
         </div>
 
         <p className="text-[11px] mt-4 text-center text-stone-500">
-          Plinko is a simulated entertainment application using non-monetary demo
-          credits. No real money gambling or rewards are offered.
+          Plinko is a simulated entertainment application using non-monetary
+          demo credits. No real money gambling or rewards are offered.
         </p>
 
         <DemoWalletModal
