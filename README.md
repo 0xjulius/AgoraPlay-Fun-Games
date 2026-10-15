@@ -1,33 +1,71 @@
-# Gyre Roulette 🎡
+# AgoraPlay 🏛️
 
-> **Disclaimer:** Gyre Roulette is an interactive, play-for-fun browser game. It is built strictly for entertainment purposes using demo credits. No real money is involved.
+> **Disclaimer:** AgoraPlay is an interactive, play-for-fun browser casino lab. It is built strictly for technical demonstration and entertainment purposes using virtual demo credits. No real money is involved.
 
 ![screenshot](src/assets/project23.png)
 
-Gyre Roulette is a modern, interactive 15-slot browser roulette game. It features a provably fair randomness engine, precisely synchronized audio-visual animations, and a fully responsive user interface.
+AgoraPlay is a modern, high-performance web application featuring a suite of interactive casino games including Plinko, Roulette, and Crash. Built with a Greek-mythology aesthetic, it combines real-time physics simulations, dynamic math models (configured with a 105% RTP for testing), and a fully responsive user interface.
 
 ## 🎮 Case Study
-[juliusaalto.com](https://juliusaalto.com/projects/gyre-roulette)
+# AgoraPlay 🏛️
+
+> **Disclaimer:** AgoraPlay is an interactive, play-for-fun browser casino lab. It is built strictly for technical demonstration and entertainment purposes using virtual demo credits. No real money is involved.
+
+![screenshot](src/assets/project23.png)
+
+AgoraPlay is a modern, high-performance web application featuring a suite of interactive casino games including Plinko, Roulette, and Crash. Built with a Greek-mythology aesthetic, it combines real-time physics simulations, dynamic math models (configured with a 105% RTP for testing), and a fully responsive user interface.
+
+## 🎮 Case Study
+[juliusaalto.com](https://juliusaalto.com/projects/agora-play)
 
 ## ✨ Features
 
-* 🎲 **Provably Fair Randomness:** Uses the browser's native Web Crypto API (`crypto.getRandomValues()`) and a CSPRNG engine to ensure unbiased and completely random outcomes.
-* 🎨 **Modern & Responsive UI:** Built with Tailwind CSS, ensuring a seamless experience across both desktop and mobile devices.
-* 🔊 **Synchronized Audio-Visuals:** Custom `cubic-bezier` CSS animations perfectly timed with React `useEffect` audio triggers for an immersive spinning experience.
-* ⚡ **Performance Optimized:** Uses React state and `useRef` efficiently to prevent unnecessary re-renders during the animation phases.
-* 🪙 **Interactive Micro-interactions:** Powered by Framer Motion for smooth modal popups, rolling balance numbers, and 3D floating coin elements.
+- 🎲 **Multi-Game Hub:** Interactive implementations of Plinko, Roulette, and Crash, complete with persistent global wallet balance and seamless page switching.
+- 📐 **Custom Math & Physics:** Plinko engine powered by custom canvas/physics logic, customizable row counts (8–16), risk modes (Low, Medium, High), and an engaging 105% RTP math model.
+- 🎨 **Modern & Responsive UI:** Built with Tailwind CSS and custom design tokens (golden accents & warm sand tones), ensuring a seamless experience across desktop and mobile devices.
+- 🛡️ **Bilingual Compliance System:** Integrated `EN`/`FI` `WelcomeModal` with `sessionStorage` memory to clearly communicate the non-gambling, educational nature of the app.
+- ⚡ **Performance Optimized:** Direct SPA re-routing support via `vercel.json` rewrites and efficient state management with `useRef` to prevent unnecessary re-renders during gameplay animations.
+- 🪙 **Interactive Micro-interactions:** Smooth collapsible navigation sidebars, floating particle effects, and dynamic mobile drawers for a complete WebApp feel.
 
 ## 🛠️ Tech Stack
 
-* **Framework:** [React 18](https://react.dev/)
-* **Build Tool:** [Vite](https://vitejs.dev/)
-* **Language:** [TypeScript](https://www.typescriptlang.org/)
-* **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-* **Animations:** [Framer Motion](https://www.framer.com/motion/)
+- **Framework:** [React 18](https://react.dev/) / [Next.js](https://nextjs.org/)
+- **Build Tool:** [Vite](https://vitejs.dev/)
+- **Language:** [TypeScript](https://www.typescriptlang.org/)
+- **Routing:** [React Router](https://reactrouter.com/)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **Icons:** [Lucide React](https://lucide.dev/)
+- **Deployment:** [Vercel](https://vercel.com/)
 
 ## 🎮 How to Play
-* Place your bets: Choose your bet size and place it on Red (2x), Black (2x), or Green (14x).
-* Wait for the timer: The game rolls automatically when the 15-second timer hits zero.
-* Watch the spin: The wheel spins and lands on a provably fair random number.
-* Collect winnings: If the wheel lands on your chosen color, your demo balance increases!
-* PS. There is a special animation, if users are hitting green ;).
+
+- **Explore the Lobby:** Navigate between active games (Plinko, Roulette, Crash) from the collapsible sidebar.
+- **Set Your Strategy:** Choose your bet size and adjust game parameters (e.g., risk levels and row count in Plinko, or colors in Roulette).
+- **Enjoy the Gameplay:** Watch real-time physics and animations unfold with instant, provably fair outcomes.
+- **Track Your Balance:** Watch your demo credit balance update globally across all pages as you play!
+
+## ✨ Features
+
+- 🎲 **Multi-Game Hub:** Interactive implementations of Plinko, Roulette, and Crash, complete with persistent global wallet balance and seamless page switching.
+- 📐 **Custom Math & Physics:** Plinko engine powered by custom canvas/physics logic, customizable row counts (8–16), risk modes (Low, Medium, High), and an engaging 105% RTP math model.
+- 🎨 **Modern & Responsive UI:** Built with Tailwind CSS and custom design tokens (golden accents & warm sand tones), ensuring a seamless experience across desktop and mobile devices.
+- 🛡️ **Bilingual Compliance System:** Integrated `EN`/`FI` `WelcomeModal` with `sessionStorage` memory to clearly communicate the non-gambling, educational nature of the app.
+- ⚡ **Performance Optimized:** Direct SPA re-routing support via `vercel.json` rewrites and efficient state management with `useRef` to prevent unnecessary re-renders during gameplay animations.
+- 🪙 **Interactive Micro-interactions:** Smooth collapsible navigation sidebars, floating particle effects, and dynamic mobile drawers for a complete WebApp feel.
+
+## 🛠️ Tech Stack
+
+- **Framework:** [React 18](https://react.dev/) / [Next.js](https://nextjs.org/)
+- **Build Tool:** [Vite](https://vitejs.dev/)
+- **Language:** [TypeScript](https://www.typescriptlang.org/)
+- **Routing:** [React Router](https://reactrouter.com/)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **Icons:** [Lucide React](https://lucide.dev/)
+- **Deployment:** [Vercel](https://vercel.com/)
+
+## 🎮 How to Play
+
+- **Explore the Lobby:** Navigate between active games (Plinko, Roulette, Crash) from the collapsible sidebar.
+- **Set Your Strategy:** Choose your bet size and adjust game parameters (e.g., risk levels and row count in Plinko, or colors in Roulette).
+- **Enjoy the Gameplay:** Watch real-time physics and animations unfold with instant, provably fair outcomes.
+- **Track Your Balance:** Watch your demo credit balance update globally across all pages as you play!
