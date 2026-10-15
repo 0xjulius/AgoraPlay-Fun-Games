@@ -16,7 +16,7 @@ export default function Header({ balance = 1250.50, onDeposit }: HeaderProps) {
         </div>
         <div>
           <h1 className="font-serif font-bold text-sm sm:text-base tracking-wider text-[#2D2621] leading-tight">
-            OLYMPUS <span className="text-amber-600 font-normal text-xs">CASINO</span>
+            AGORA <span className="text-amber-600 font-normal text-xs">Bet</span>
           </h1>
           <div className="flex items-center gap-1 text-[9px] text-[#8C827A] font-medium tracking-wide">
             <Crown className="w-2.5 h-2.5 text-amber-600" />

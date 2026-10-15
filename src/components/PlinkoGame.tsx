@@ -62,39 +62,40 @@ const TOP = 44;
 const BIN_H = 34;
 const BOTTOM_PAD = 18;
 
+// Clean multipliers ensuring exact dollar/cent outcomes (e.g. $10.00 * 1.2 = $12.00)
 const HALF_PAYTABLE: Record<Risk, Record<number, number[]>> = {
   low: {
-    8: [5.82, 2.73, 1.41, 0.85, 0.57],
-    9: [5.03, 2.51, 1.26, 0.77, 0.49],
-    10: [8.21, 4.1, 2.15, 1.27, 0.79, 0.59],
-    11: [7.07, 3.68, 2.02, 1.16, 0.72, 0.5],
-    12: [10.67, 5.63, 3.11, 1.85, 1.17, 0.78, 0.58],
-    13: [9.43, 5.14, 2.87, 1.66, 1.06, 0.76, 0.53],
-    14: [14.0, 7.64, 4.44, 2.71, 1.64, 1.06, 0.78, 0.58],
-    15: [13.12, 7.1, 4.13, 2.5, 1.56, 1.01, 0.7, 0.55],
-    16: [18.32, 10.1, 5.94, 3.57, 2.28, 1.49, 0.99, 0.8, 0.6],
+    8: [5.0, 2.0, 1.2, 0.8, 0.5],
+    9: [6.0, 2.5, 1.5, 0.9, 0.5],
+    10: [8.0, 3.0, 1.6, 1.0, 0.7, 0.5],
+    11: [9.0, 3.5, 1.8, 1.1, 0.8, 0.5],
+    12: [10.0, 4.0, 2.0, 1.2, 0.9, 0.6, 0.5],
+    13: [12.0, 5.0, 2.5, 1.4, 1.0, 0.7, 0.5],
+    14: [14.0, 6.0, 3.0, 1.6, 1.1, 0.8, 0.6, 0.5],
+    15: [16.0, 7.0, 3.5, 1.8, 1.2, 0.9, 0.7, 0.5],
+    16: [18.0, 8.0, 4.0, 2.0, 1.3, 1.0, 0.8, 0.6, 0.5],
   },
   medium: {
-    8: [14.04, 3.92, 1.4, 0.65, 0.38],
-    9: [11.05, 3.28, 1.19, 0.51, 0.23],
-    10: [21.44, 6.99, 2.61, 1.21, 0.65, 0.37],
-    11: [18.36, 6.12, 2.32, 0.98, 0.49, 0.3],
-    12: [37.11, 12.7, 4.69, 2.14, 1.17, 0.59, 0.29],
-    13: [32.28, 11.49, 4.34, 1.86, 0.87, 0.49, 0.25],
-    14: [68.91, 24.61, 9.35, 3.94, 1.78, 0.99, 0.49, 0.39],
-    15: [61.74, 22.75, 8.45, 3.58, 1.62, 0.78, 0.39, 0.26],
-    16: [121.57, 43.77, 16.53, 7.01, 3.21, 1.56, 0.87, 0.48, 0.39],
+    8: [12.0, 4.0, 1.5, 0.7, 0.4],
+    9: [15.0, 5.0, 1.8, 0.8, 0.4],
+    10: [20.0, 6.0, 2.2, 1.0, 0.6, 0.4],
+    11: [25.0, 8.0, 3.0, 1.2, 0.7, 0.4],
+    12: [30.0, 10.0, 4.0, 1.5, 0.8, 0.5, 0.3],
+    13: [40.0, 14.0, 5.0, 2.0, 1.0, 0.6, 0.3],
+    14: [50.0, 18.0, 6.5, 2.5, 1.2, 0.7, 0.4, 0.3],
+    15: [75.0, 25.0, 9.0, 3.5, 1.6, 0.8, 0.4, 0.3],
+    16: [100.0, 35.0, 12.0, 5.0, 2.0, 1.0, 0.5, 0.4, 0.3],
   },
   high: {
-    8: [32.07, 4.58, 1.1, 0.45, 0.27],
-    9: [21.74, 3.26, 0.8, 0.29, 0.13],
-    10: [76.83, 12.49, 2.59, 0.86, 0.38, 0.28],
-    11: [54.44, 8.37, 1.8, 0.59, 0.25, 0.13],
-    12: [187.64, 28.87, 6.25, 1.73, 0.77, 0.39, 0.29],
-    13: [139.04, 21.53, 4.49, 1.26, 0.45, 0.22, 0.14],
-    14: [458.9, 71.7, 14.34, 3.92, 1.43, 0.67, 0.38, 0.28],
-    15: [347.6, 55.71, 11.59, 2.9, 0.98, 0.4, 0.18, 0.14],
-    16: [1117.95, 184.71, 37.91, 9.23, 2.91, 1.17, 0.48, 0.39, 0.29],
+    8: [30.0, 5.0, 1.2, 0.5, 0.2],
+    9: [45.0, 7.0, 1.6, 0.6, 0.2],
+    10: [70.0, 10.0, 2.2, 0.8, 0.4, 0.2],
+    11: [100.0, 15.0, 3.0, 1.0, 0.5, 0.2],
+    12: [150.0, 22.0, 4.5, 1.2, 0.6, 0.3, 0.2],
+    13: [250.0, 35.0, 7.0, 1.8, 0.8, 0.4, 0.2],
+    14: [400.0, 55.0, 10.0, 2.5, 1.0, 0.5, 0.3, 0.2],
+    15: [600.0, 90.0, 18.0, 4.0, 1.5, 0.6, 0.3, 0.2],
+    16: [1000.0, 150.0, 30.0, 7.0, 2.0, 0.8, 0.4, 0.3, 0.2],
   },
 };
 
@@ -124,10 +125,11 @@ function fmtMult(m: number): string {
 
 function fmtCurrency(n: number): string {
   return (
-    n.toLocaleString("fi-FI", {
+    "$" +
+    n.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }) + " €"
+    })
   );
 }
 
@@ -455,7 +457,6 @@ export default function PlinkoGame({
         ? "Stop Autobet"
         : "Start Autobet";
 
-  // Place bet -painike komponenttina, jota voidaan käyttää joustavasti eri sijainneissa
   const actionButton = (
     <button
       onClick={handleMainButton}
@@ -518,9 +519,8 @@ export default function PlinkoGame({
             </button>
           </div>
 
-          {/* Game Layout: Desktop (lg+) rinnakkain, mobiili/tablet allekkain */}
+          {/* Game Layout */}
           <div className="flex flex-col lg:grid lg:grid-cols-[320px_1fr] gap-4 mb-6">
-            {/* BOARD & MOBILE PLACE BET: Mobiilissa ja tableteissa Action Button tulee suoraan laudan alle ennen kontrollipaneelia */}
             <div className="order-1 lg:order-2 flex flex-col gap-4">
               <div className="rounded-2xl border border-[#E2D6C3] bg-[#EFE8DC] shadow-[inset_0_2px_6px_rgba(0,0,0,0.05)] p-3 sm:p-4 flex flex-col">
                 <div className="flex items-center justify-between gap-2 mb-2 min-h-[30px]">
@@ -697,7 +697,6 @@ export default function PlinkoGame({
                 </svg>
               </div>
 
-              {/* Mobiilissa ja tableteissa "Place bet" näkyy heti pelilaudan alapuolella */}
               <div className="block lg:hidden">{actionButton}</div>
             </div>
 
@@ -730,7 +729,7 @@ export default function PlinkoGame({
                 >
                   <div className="flex items-center flex-1 mr-2">
                     <span className="text-sm font-semibold mr-1 text-[#8C827A]">
-                      €
+                      $
                     </span>
                     <input
                       type="number"
@@ -838,7 +837,6 @@ export default function PlinkoGame({
                 </div>
               )}
 
-              {/* Desktopilla "Place bet" näkyy kontrollipaneelin alaosassa, mobiilissa se on piilotettu ja siirretty pelin alle */}
               <div className="hidden lg:block">{actionButton}</div>
             </div>
           </div>
