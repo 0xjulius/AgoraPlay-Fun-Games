@@ -119,9 +119,21 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
       }
 
       const botNames = [
-        "ZeusMaster", "Athena99", "Ares_God", "Hermes_Fast", "Poseidon7",
-        "Hera_Queen", "Apollo_Sun", "Artemis_Hunt", "Chronos", "OlympusKing",
-        "Midas_Touch", "Spartan300", "Minotaur", "Pegasus", "Hades_Under",
+        "ZeusMaster",
+        "Athena99",
+        "Ares_God",
+        "Hermes_Fast",
+        "Poseidon7",
+        "Hera_Queen",
+        "Apollo_Sun",
+        "Artemis_Hunt",
+        "Chronos",
+        "OlympusKing",
+        "Midas_Touch",
+        "Spartan300",
+        "Minotaur",
+        "Pegasus",
+        "Hades_Under",
       ];
       const count = Math.floor(Math.random() * 4) + 5;
       const shuffled = [...botNames].sort(() => 0.5 - Math.random());
@@ -130,7 +142,9 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
 
       for (let i = 0; i < count; i++) {
         const id = `bot-${i}-${Date.now()}`;
-        const target = Number((1.1 + Math.pow(Math.random(), 2) * 12).toFixed(2));
+        const target = Number(
+          (1.1 + Math.pow(Math.random(), 2) * 12).toFixed(2),
+        );
         allTargets.push({ id, target });
         generatedBots.push({
           id,
@@ -145,7 +159,10 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
       botTargetsRef.current = allTargets;
 
       generatedBots.forEach((bot, idx) => {
-        const delay = 300 + Math.floor((idx / generatedBots.length) * 1800) + Math.random() * 200;
+        const delay =
+          300 +
+          Math.floor((idx / generatedBots.length) * 1800) +
+          Math.random() * 200;
         const t = setTimeout(() => {
           setLiveBets((prev) => {
             const userBet = prev.find((b) => b.isUser);
@@ -424,7 +441,7 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
         <button
           onClick={handlePlaceBet}
           disabled={status !== "waiting"}
-          className="w-full py-3.5 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-serif font-bold text-base rounded-2xl shadow-lg border border-amber-400/50 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-3.5 px-2 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-serif font-bold text-sm sm:text-base rounded-2xl shadow-lg border border-amber-400/50 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap leading-tight"
         >
           {status === "waiting"
             ? `Place Bet (${countdown.toFixed(1)}s)`
@@ -451,7 +468,7 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
         </button>
       );
     }
-   if (!cashedOut && status === "flying") {
+    if (!cashedOut && status === "flying") {
       return (
         <button
           onClick={() => handleCashOut(currentMultiplier)}
@@ -483,7 +500,9 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
               +{cashOutWinAmount.toFixed(2)} USD
             </span>
           </div>
-          <span className="text-white text-xl select-none scale-x-[-1] drop-shadow">🌿</span>
+          <span className="text-white text-xl select-none scale-x-[-1] drop-shadow">
+            🌿
+          </span>
         </button>
       );
     }
@@ -522,10 +541,10 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
         </div>
       </div>
 
-      {/* 2. MAIN LAYOUT */}
+      {/* 2. MAIN LAYOUT - Käytetään lg: grid-cols-12 breakpointtia */}
       <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4">
         {/* RIGHT PANEL (CHART & FLIGHT) */}
-        <div className="order-1 lg:order-2 lg:col-span-8 bg-[#1A1614] rounded-3xl border border-[#D4AF37]/40 p-6 shadow-2xl shadow-[inset_0_0_30px_rgba(255,255,255,0.35)] relative overflow-hidden flex flex-col items-center justify-center min-h-[440px]">
+        <div className="order-1 lg:order-2 lg:col-span-8 bg-[#1A1614] rounded-3xl border border-[#D4AF37]/40 p-6 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center min-h-[440px]">
           <div
             className="absolute inset-0 bg-cover bg-center pointer-events-none"
             style={{ backgroundImage: `url(${crashBg})` }}
@@ -654,7 +673,7 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
           </div>
         </div>
 
-        {/* MOBIILIN ERILLINEN TOIMINTOPAINIKE HETI PELIN ALAPUOLELLA (KAIKISSA TILANTEISSA) */}
+        {/* MOBIILIN / TABLETIN TOIMINTOPAINIKE HETI PELIN ALAPUOLELLA (Alle lg-näyttöjen) */}
         <div className="block lg:hidden order-1 w-full">
           {renderActionButton()}
         </div>
@@ -726,8 +745,8 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
                 </button>
               </div>
 
-              {/* Quick Adjustment Buttons */}
-              <div className="grid grid-cols-7 gap-1">
+              {/* Quick Adjustment Buttons - Korjattu pakotettu 2-rivinen grid */}
+              <div className="grid grid-cols-4 gap-1 pt-1">
                 {[
                   { label: "+1", action: () => addBet(1) },
                   { label: "+5", action: () => addBet(5) },
@@ -740,9 +759,9 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
                   <button
                     key={btn.label}
                     disabled={hasBet}
-                    className={`gyre-btn py-1.5 px-0.5 rounded-lg text-[10px] sm:text-xs font-bold border transition-all active:scale-95 shadow-xs text-center cursor-pointer disabled:opacity-50 truncate ${
+                    className={`gyre-btn py-1.5 px-0.5 rounded-lg text-xs font-bold border transition-all active:scale-95 shadow-xs text-center cursor-pointer disabled:opacity-50 whitespace-nowrap min-w-0 ${
                       btn.label === "MAX"
-                        ? "bg-gradient-to-r from-[#D4AF37]/30 to-[#D4AF37]/50 border-[#D4AF37]/70 font-extrabold text-amber-950"
+                        ? "bg-gradient-to-r from-[#D4AF37]/30 to-[#D4AF37]/50 border-[#D4AF37]/70 font-extrabold text-amber-950 col-span-2"
                         : ""
                     }`}
                     onClick={btn.action}
@@ -771,10 +790,8 @@ export default function CrashGame({ balance, setBalance }: CrashGameProps) {
             </div>
           </div>
 
-          {/* DESKTOP-NÄKYMÄN TOIMINTOPAINIKE */}
-          <div className="hidden lg:block">
-            {renderActionButton()}
-          </div>
+          {/* DESKTOP-NÄKYMÄN TOIMINTOPAINIKE (Vain lg-näytöistä ylöspäin) */}
+          <div className="hidden lg:block">{renderActionButton()}</div>
         </div>
       </div>
 
