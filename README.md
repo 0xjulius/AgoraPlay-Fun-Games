@@ -4,7 +4,7 @@
 
 ![screenshot](src/assets/project23.png)
 
-AgoraPlay is a modern, high-performance web application featuring a suite of interactive casino games including Plinko, Roulette, and Crash. Built with a Greek-mythology aesthetic, it combines real-time physics simulations, dynamic math models (configured with a 105% RTP for testing), and a fully responsive user interface.
+AgoraPlay is a modern, high-performance web application featuring a suite of interactive casino games including Plinko, Roulette, and Crash. Built with a Greek-mythology aesthetic, it combines real-time physics simulations, dynamic math models, and a fully responsive user interface.
 
 ## 🎮 Case Study
 [https://juliusaalto.com](https://juliusaalto.com/projects/gyre-roulette)
