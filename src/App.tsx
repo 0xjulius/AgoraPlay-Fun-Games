@@ -5,7 +5,8 @@ import Chat from "./components/Chat";
 import Header from "./components/Header";
 import RouletteGame from "./components/RouletteGame";
 import CrashGame from "./components/CrashGame";
-import PlinkoGame from "./components/PlinkoGame"; // Varmista oikea polku
+import PlinkoGame from "./components/PlinkoGame"; 
+import WelcomeModal from "./components/WelcomeModal"; // <-- Tuotu tähän
 import GoldDust from "./components/GoldDust";
 import bgImage from "./assets/bg2.png";
 
@@ -50,6 +51,9 @@ export default function App() {
         backgroundRepeat: "no-repeat",
       }}
     >
+      {/* Vastuuvapauslauseke (näkyy kerran per sessio) */}
+      <WelcomeModal />
+
       {/* Vasen sivupalkki (Kiinteä, täysi korkeus) */}
       <div className="h-full shrink-0 z-40 hidden md:block">
         <Sidebar 
