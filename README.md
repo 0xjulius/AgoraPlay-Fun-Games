@@ -7,16 +7,7 @@
 AgoraPlay is a modern, high-performance web application featuring a suite of interactive casino games including Plinko, Roulette, and Crash. Built with a Greek-mythology aesthetic, it combines real-time physics simulations, dynamic math models (configured with a 105% RTP for testing), and a fully responsive user interface.
 
 ## 🎮 Case Study
-# AgoraPlay 🏛️
-
-> **Disclaimer:** AgoraPlay is an interactive, play-for-fun browser casino lab. It is built strictly for technical demonstration and entertainment purposes using virtual demo credits. No real money is involved.
-
-![screenshot](src/assets/project23.png)
-
-AgoraPlay is a modern, high-performance web application featuring a suite of interactive casino games including Plinko, Roulette, and Crash. Built with a Greek-mythology aesthetic, it combines real-time physics simulations, dynamic math models (configured with a 105% RTP for testing), and a fully responsive user interface.
-
-## 🎮 Case Study
-[juliusaalto.com](https://juliusaalto.com/projects/agora-play)
+[https://juliusaalto.com](https://juliusaalto.com/projects/gyre-roulette)
 
 ## ✨ Features
 
