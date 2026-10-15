@@ -279,7 +279,7 @@ export default function PlinkoGame({
       return false;
     }
 
-    playSound("/sounds/bet.wav");
+    playSound("/sounds/drop.wav");
     setBalance((prev) => prev - amount);
 
     const bytes = new Uint8Array(rows);
